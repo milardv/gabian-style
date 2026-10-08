@@ -7,6 +7,7 @@ import { marseilleBoundary, marseilleOverview, marseilleOverviewImagery, marseil
 const root = fileURLToPath(new URL('./', import.meta.url));
 const publicDir = join(root, 'public');
 const port = Number(process.env.PORT || 4174);
+const host = process.env.HOST || '127.0.0.1';
 const userAgent = 'GabianStyle/0.1 (local Marseille game)';
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.png': 'image/png', '.json': 'application/json; charset=utf-8' };
 
@@ -44,6 +45,7 @@ createServer(async (request, response) => {
   try {
     if (request.method !== 'GET') return fail(response, 405, 'Méthode non autorisée.');
     const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
+    if (url.pathname === '/healthz') return json(response, 200, { status: 'ok' });
     if (url.pathname === '/api/marseille/boundary') return json(response, 200, await marseilleBoundary());
     if (url.pathname === '/api/marseille/overview') return json(response, 200, await marseilleOverview());
     if (url.pathname === '/api/marseille/mission') return json(response, 200, await randomCoastalMission());
@@ -74,4 +76,4 @@ createServer(async (request, response) => {
     if (response.headersSent) response.destroy(error);
     else fail(response, 502, error.message || 'Une source externe ne répond pas.');
   }
-}).listen(port, '127.0.0.1', () => console.log(`Gabian Style : http://127.0.0.1:${port}`));
+}).listen(port, host, () => console.log(`Gabian Style : http://${host}:${port}`));

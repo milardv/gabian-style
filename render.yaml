@@ -1,0 +1,13 @@
+# Démo gratuite : cache temporaire, mise en veille après inactivité.
+services:
+  - type: web
+    name: gabian-style
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /healthz
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 4174
