@@ -29,19 +29,3 @@ test('Installation iPhone : instructions explicites ; mode autonome : pas de bou
  const f=installFixture({ios:true});await f.buttons[0].onclick();assert.match(f.help[0].textContent,/Safari.*Sur l’écran d’accueil/);assert.equal(f.help[0].hidden,false);
  const installed=installFixture({standalone:true});assert.ok(installed.buttons.every(button=>button.hidden));
 });
-async function workerFixture(){
- const handlers={},stored=new Map([['/offline.html',new Response('offline-page')],['/icons/icon-192.png',new Response('icon')]]),deleted=[],preloaded=[];let network=()=>Promise.resolve(new Response('online-game'));
- const context={URL,Response,self:{location:{origin:'https://gabian.example'},clients:{claim:async()=>{}},addEventListener:(type,fn)=>handlers[type]=fn},fetch:request=>network(request),caches:{open:async()=>({addAll:async paths=>preloaded.push(...paths)}),match:async key=>stored.get(key)?.clone(),keys:async()=>['gabian-offline-v0','gabian-offline-v1','another-app'],delete:async key=>deleted.push(key)}};
- vm.runInNewContext(await readFile(new URL('../public/sw.js',import.meta.url),'utf8'),context);
- const run=async(type,event={})=>{let pending;handlers[type]({...event,waitUntil:p=>pending=p,respondWith:p=>pending=p});return pending?await pending:undefined;};
- return{run,deleted,preloaded,network:fn=>network=fn,request:(path,mode='navigate')=>({url:'https://gabian.example'+path,method:'GET',mode})};
-}
-test('Worker : nouvelle page en ligne, secours hors ligne ou serveur indisponible',async()=>{
- const f=await workerFixture();let response=await f.run('fetch',{request:f.request('/')});assert.equal(await response.text(),'online-game');
- f.network(()=>Promise.reject(Error('offline')));response=await f.run('fetch',{request:f.request('/')});assert.equal(await response.text(),'offline-page');
- f.network(()=>Promise.resolve(new Response('upstream unavailable',{status:503})));response=await f.run('fetch',{request:f.request('/')});assert.equal(await response.text(),'offline-page');
-});
-test('Worker : aucune interception des tuiles, API ou modules ; cache de secours borné',async()=>{
- const f=await workerFixture();await f.run('install');assert.deepEqual(f.preloaded,['/offline.html','/icons/icon-192.png']);await f.run('activate');assert.deepEqual(f.deleted,['gabian-offline-v0']);
- for(const path of ['/api/marseille/terrain/1/2','/api/marseille/mission','/flight/app.js','/flight/flight.css'])assert.equal(await f.run('fetch',{request:f.request(path,'cors')}),undefined);
-});

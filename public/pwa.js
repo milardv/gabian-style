@@ -1,3 +1,11 @@
+export function cacheMessage(win,type){
+ return new Promise((resolve,reject)=>{
+  const controller=win.navigator.serviceWorker?.controller;if(!controller){resolve(null);return;}
+  const channel=new win.MessageChannel(),timer=win.setTimeout(()=>{channel.port1.close();reject(Error('Délai de cache dépassé'));},10000);
+  channel.port1.onmessage=event=>{win.clearTimeout(timer);channel.port1.close();resolve(event.data);};
+  controller.postMessage({type},[channel.port2]);
+ });
+}
 export function setupPwa(win,doc){
  const buttons=[...doc.querySelectorAll('[data-install]')],help=[...doc.querySelectorAll('[data-install-help]')];
  const standalone=win.matchMedia('(display-mode: standalone)');let prompt=null,installed=false;
@@ -19,7 +27,32 @@ export function setupPwa(win,doc){
  };
  sync();
  if(win.isSecureContext&&'serviceWorker' in win.navigator){
-  const register=()=>win.navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}).catch(()=>{});
+  const status=doc.getElementById?.('cache-status'),persist=doc.getElementById?.('persist-cache'),clear=doc.getElementById?.('clear-map-cache'),update=doc.getElementById?.('pwa-update');
+  const describe=async()=>{
+   if(!status)return;
+   try{const stats=await cacheMessage(win,'CACHE_STATS');if(stats&&!stats.error)status.textContent=`${Math.round(stats.bytes/1048576)} Mo en cache · ${stats.count} zones/fichiers · limite ${Math.round(stats.limit/1048576)} Mo.`;}catch{}
+  };
+  doc.addEventListener?.('click',event=>{const toggle=event.target.closest?.('#panel-toggle');if(toggle?.getAttribute('aria-expanded')==='true')describe();});
+  if(persist){persist.disabled=!win.navigator.storage?.persist;persist.onclick=async()=>{
+   persist.disabled=true;
+   try{const durable=await win.navigator.storage.persist();if(status)status.textContent=durable?'Conservation durable autorisée. Les zones parcourues restent sur cet appareil.':'Cache actif. Sa conservation dépend du navigateur et de l’espace disponible.';}
+   catch{if(status)status.textContent='Cache actif ; conservation durable indisponible dans ce navigateur.';}
+   finally{persist.disabled=false;}
+  };}
+  if(clear)clear.onclick=async()=>{
+   clear.disabled=true;
+   try{const result=await cacheMessage(win,'CLEAR_MAP_CACHE');if(status)status.textContent=result&&!result.error?'Cache de la carte vidé. Tes souvenirs sont conservés.':'Cache indisponible pour le moment.';}
+   catch{if(status)status.textContent='Cache indisponible pour le moment.';}
+   finally{clear.disabled=false;}
+  };
+  let registration,reloading=false;
+  const offerUpdate=()=>{if(update)update.hidden=!registration?.waiting;};
+  if(update)update.onclick=()=>{if(registration?.waiting){reloading=true;registration.waiting.postMessage({type:'ACTIVATE_UPDATE'});}};
+  win.navigator.serviceWorker.addEventListener?.('controllerchange',()=>{if(reloading)win.location.reload();else describe();});
+  const register=()=>win.navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}).then(value=>{
+   registration=value;offerUpdate();describe();
+   registration.addEventListener?.('updatefound',()=>registration.installing?.addEventListener('statechange',offerUpdate));
+  }).catch(()=>{});
   if(doc.readyState==='complete')register();else win.addEventListener('load',register,{once:true});
  }
 }

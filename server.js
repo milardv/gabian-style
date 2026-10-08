@@ -1,3 +1,4 @@
+import {pwaAssets,renderWorker} from './lib/pwa-assets.js';
 import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
@@ -6,6 +7,8 @@ import { marseilleBoundary, marseilleOverview, marseilleOverviewImagery, marseil
 
 const root = fileURLToPath(new URL('./', import.meta.url));
 const publicDir = join(root, 'public');
+const pwa = pwaAssets(publicDir);
+const worker = renderWorker(readFileSync(join(publicDir,'sw.js'),'utf8'),pwa);
 const port = Number(process.env.PORT || 4174);
 const host = process.env.HOST || '127.0.0.1';
 const userAgent = 'GabianStyle/0.1 (local Marseille game)';
@@ -45,6 +48,7 @@ createServer(async (request, response) => {
   try {
     if (request.method !== 'GET') return fail(response, 405, 'Méthode non autorisée.');
     const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
+    if(url.pathname==='/sw.js'){response.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});return response.end(worker);}
     if (url.pathname === '/healthz') return json(response, 200, { status: 'ok' });
     if (url.pathname === '/api/marseille/boundary') return json(response, 200, await marseilleBoundary());
     if (url.pathname === '/api/marseille/overview') return json(response, 200, await marseilleOverview());
@@ -66,10 +70,11 @@ createServer(async (request, response) => {
       response.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=86400' });
       return response.end(image);
     }
+    if(url.searchParams.has('build')&&url.searchParams.get('build')!==pwa.version)return fail(response,409,'Version remplacée ; réessayez.');
     const target = ['/', '/marseille', '/marseille/'].includes(url.pathname) ? '/index.html' : url.pathname;
     const path = normalize(join(publicDir, target));
     if (!path.startsWith(publicDir + '/') || !existsSync(path)) return fail(response, 404, 'Page introuvable.');
-    response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': ['.html','.js','.css','.webmanifest'].includes(extname(path)) ? 'no-cache' : 'public, max-age=86400' });
+    response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff', 'X-Gabian-Version':pwa.version, 'Cache-Control': ['.html','.js','.css','.webmanifest'].includes(extname(path)) ? 'no-cache' : 'public, max-age=86400' });
     response.end(readFileSync(path));
   } catch (error) {
     console.error(error);
