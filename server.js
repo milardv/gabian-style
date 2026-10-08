@@ -9,7 +9,7 @@ const publicDir = join(root, 'public');
 const port = Number(process.env.PORT || 4174);
 const host = process.env.HOST || '127.0.0.1';
 const userAgent = 'GabianStyle/0.1 (local Marseille game)';
-const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.png': 'image/png', '.json': 'application/json; charset=utf-8' };
+const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.png': 'image/png', '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json; charset=utf-8' };
 
 function json(response, status, body) {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
@@ -69,7 +69,7 @@ createServer(async (request, response) => {
     const target = ['/', '/marseille', '/marseille/'].includes(url.pathname) ? '/index.html' : url.pathname;
     const path = normalize(join(publicDir, target));
     if (!path.startsWith(publicDir + '/') || !existsSync(path)) return fail(response, 404, 'Page introuvable.');
-    response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff' });
+    response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': ['.html','.js','.css','.webmanifest'].includes(extname(path)) ? 'no-cache' : 'public, max-age=86400' });
     response.end(readFileSync(path));
   } catch (error) {
     console.error(error);

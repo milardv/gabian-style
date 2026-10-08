@@ -79,3 +79,4 @@
 @media(pointer:coarse) and (max-height:500px){
  .intro .welcome{top:calc(50% + 28px)}.welcome-gabian{top:-74px;right:8px;width:110px;height:80px}.touch-actions{right:calc(68px + env(safe-area-inset-right))}.touch-actions button{min-width:72px;padding:8px;font-size:12px}.exploration-toggle{left:128px;right:auto;max-width:132px}.welcome{padding:18px}.welcome-content{max-height:calc(100dvh - 160px)}
 }
+.install-app{min-height:44px;margin-top:10px;font-size:12px}.welcome .install-help,.install-help{font-size:12px;line-height:1.6;margin:10px 0 0}.flight-settings .install-app{margin-top:0}.flight-settings .install-help{grid-column:1/-1}

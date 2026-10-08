@@ -73,3 +73,9 @@ Voir [le guide de déploiement](docs/deploiement.md) : démo Render gratuite ave
 Sur écran tactile, le mode « Mobile · léger » limite le rendu et les textures, replie les réglages et laisse les commandes principales accessibles. WebGL 2 et une connexion restent nécessaires ; la fluidité sur de vrais téléphones reste à vérifier.
 
 L’accueil tactile conserve le gabian animé au-dessus du texte défilant. Le bouton plein écran est accessible dès l’accueil et via le raccourci dans le coin inférieur droit. Le passage en paysage tente le plein écran ; si le navigateur exige une interaction, le prochain toucher pendant la partie réessaie. Une sortie volontaire est respectée jusqu’à la prochaine rotation. En vue libre, « Afficher les contrôles » reste visible dans le coin.
+
+## Application mobile (PWA)
+
+Le manifeste fournit une identité stable et un lancement autonome, avec icônes PNG 192/512 px, une version Android maskable et une icône Apple 180 px. « Installer l’app » ouvre l’invitation native lorsqu’elle est disponible ; sinon il indique la procédure du navigateur. Sur iPhone : Safari → Partager → Sur l’écran d’accueil.
+
+HTTPS est nécessaire en production. Le service worker met uniquement en cache une petite page de secours et son icône. Le jeu, ses modules et les tuiles IGN utilisent le réseau ; aucun jeu hors ligne complet n’est promis. Les pages et modules sont revalidés à chaque session afin de recevoir les mises à jour Render. Les visites restent dans le stockage local de cette origine ; selon le navigateur, le carnet de l’app installée peut être distinct de celui de l’onglet.

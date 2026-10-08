@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#164bc1"/><path d="M120 390h272" stroke="#ffe797" stroke-width="10" stroke-linecap="round"/><g transform="translate(40 90) scale(1.35)"><g class="mascot-tail"><path d="m95 160-63-26 27 42 44 8" fill="#164bc1" stroke="#123471" stroke-width="4" stroke-linejoin="round"/><path d="m39 143 36 28" stroke="#fff8e5" stroke-width="3"/></g>
+ <path d="m126 184-4 34m49-35 4 35" stroke="#c64413" stroke-width="7" stroke-linecap="round"/>
+ <g class="mascot-body"><path d="M91 134c12-35 37-51 62-47 45 6 68 33 64 61-4 38-31 59-74 54-36-4-65-28-52-68Z" fill="#fff8e5" stroke="#123471" stroke-width="4"/>
+ <path d="M97 129c32-3 70 6 94 46-21 18-53 8-76-5-15-9-27-22-18-41Z" fill="#89d2f5" stroke="#123471" stroke-width="4"/><path d="m113 138 46 32m-49-20 27 22" stroke="#164bc1" stroke-width="4" stroke-linecap="round"/>
+ </g>
+ <g class="mascot-head"><path d="M157 119c-7-25-10-48 6-65 19-20 47-12 60 7 11 16 9 40-5 50l-21 20" fill="#fff8e5" stroke="#123471" stroke-width="4" stroke-linecap="round"/>
+ <path d="m165 51-13-11m20 7-4-17" stroke="#123471" stroke-width="4" stroke-linecap="round"/>
+ <path d="m204 67 13-3" stroke="#123471" stroke-width="4" stroke-linecap="round"/>
+ <g class="mascot-eye"><ellipse cx="213" cy="80" rx="5" ry="7" fill="#123471"/><circle cx="215" cy="78" r="1.5" fill="#fff8e5"/></g>
+ <path d="M228 87c21-2 40 3 57 15l-61 3" fill="#ffe797" stroke="#123471" stroke-width="4" stroke-linejoin="round"/>
+ <g class="mascot-beak"><path d="m223 103 60-1-41 18-21-8" fill="#ee550f" stroke="#123471" stroke-width="4" stroke-linejoin="round"/></g>
+ <g class="mascot-sardine"><path d="M260 106c-13 4-25 15-25 31 15 4 27-6 29-19l11 8-2-20-13 0Z" fill="#89d2f5" stroke="#123471" stroke-width="3" stroke-linejoin="round"/><path d="m244 128 11-14m-10 11 8 5" stroke="#164bc1" stroke-width="2"/><circle cx="241" cy="135" r="2" fill="#123471"/></g>
+ </g>
+ <path d="m112 218 16-1 10 5m28-4 13-1 10 5" stroke="#c64413" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+ <g class="mascot-crumbs" fill="#ee550f"><circle cx="277" cy="139" r="2.5"/><circle cx="284" cy="152" r="2"/><circle cx="267" cy="150" r="2"/></g></g></svg>

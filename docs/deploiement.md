@@ -44,3 +44,9 @@ HOST=0.0.0.0 npm start
 Ouvrir `http://IP_LOCALE_DE_L_ORDINATEUR:4174` sur le téléphone ; autoriser le port 4174 sur le réseau local si nécessaire. Le serveur ne crée pas de tunnel public. Les souvenirs restent propres au navigateur et à l’origine : le carnet de localhost n’est pas transféré à l’adresse publique.
 
 Le plein écran dépend de l’API disponible dans le navigateur : la rotation seule peut être refusée, car une activation utilisateur est généralement requise. Le jeu réessaie au prochain toucher et propose un bouton explicite. Voir [les restrictions de requestFullscreen](https://developer.mozilla.org/fr/docs/Web/API/Element/requestFullscreen). Le mode reste utilisable sans plein écran.
+
+## Installer la PWA
+
+Après le déploiement HTTPS, ouvrir le lien puis « Installer l’app », ou l’option d’installation du navigateur. Sur iPhone, ouvrir Safari → Partager → Sur l’écran d’accueil. L’icône du gabian à la sardine est fournie pour Android et Apple. Au lancement depuis l’icône, le manifeste demande un affichage autonome, sans barre d’adresse.
+
+Une page de secours s’affiche en cas d’erreur réseau ou serveur ; le jeu a toujours besoin d’Internet pour la carte. Le cache de secours n’inclut aucune tuile IGN. Vérifier l’installation, l’icône et le lancement depuis l’accueil sur un vrai Android/iPhone après déploiement. [Conditions d’installation](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable).
