@@ -8,6 +8,7 @@
 </head>
 <body class="intro">
   <div id="view-tools" class="view-tools"><button id="restore-hud" hidden aria-label="Réafficher les contrôles">Afficher les contrôles</button><button id="fullscreen-shortcut" aria-label="Passer en plein écran" title="Plein écran"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/></svg></button></div>
+  <aside id="crash-recovery" class="crash-recovery" hidden aria-label="Repartir après la collision"><div><strong>Oh fan, collision !</strong><p id="crash-recovery-status" role="status">Le gabian est tombé. Prêt à repartir ?</p></div><button id="crash-restart">Repartir <kbd>R</kbd></button></aside>
   <canvas id="sky" aria-label="Marseille en trois dimensions, vue depuis le gabian" tabindex="0"></canvas>
   <header class="flight-header"><div><a href="/" class="back" aria-label="Gabian Style, accueil">GABIAN<span>STYLE</span><svg viewBox="0 0 64 32" aria-hidden="true"><path d="M3 24Q17 3 31 20Q43 5 61 12M31 20l4 8"/></svg></a><h1>Marseille sous les ailes.</h1></div><div class="header-actions"><button id="cry" aria-label="Faire le cri du gabian, touche V">Cri <kbd>V</kbd></button><button id="help-toggle" aria-controls="help" aria-expanded="false">Commandes</button><button id="hide-hud" disabled aria-label="Masquer toute l’interface">Vue libre <kbd>H</kbd></button></div></header>
   <div class="flight-location"><span id="place-name">Vieux-Port</span><strong id="current-street">Rue actuelle · chargement</strong><span id="flight-state" role="status">Préparation de Marseille…</span></div>
