@@ -42,3 +42,5 @@ HOST=0.0.0.0 npm start
 ```
 
 Ouvrir `http://IP_LOCALE_DE_L_ORDINATEUR:4174` sur le téléphone ; autoriser le port 4174 sur le réseau local si nécessaire. Le serveur ne crée pas de tunnel public. Les souvenirs restent propres au navigateur et à l’origine : le carnet de localhost n’est pas transféré à l’adresse publique.
+
+Le plein écran dépend de l’API disponible dans le navigateur : la rotation seule peut être refusée, car une activation utilisateur est généralement requise. Le jeu réessaie au prochain toucher et propose un bouton explicite. Voir [les restrictions de requestFullscreen](https://developer.mozilla.org/fr/docs/Web/API/Element/requestFullscreen). Le mode reste utilisable sans plein écran.

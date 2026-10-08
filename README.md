@@ -71,3 +71,5 @@ En scooter, maintenir `Maj` en tournant déclenche un dérapage assisté à part
 Voir [le guide de déploiement](docs/deploiement.md) : démo Render gratuite avec HTTPS, passage possible à un disque persistant payant, ou conteneur Docker sur votre serveur. `HOST=0.0.0.0` permet l’accès réseau ; `/healthz` contrôle le serveur sans appeler l’IGN.
 
 Sur écran tactile, le mode « Mobile · léger » limite le rendu et les textures, replie les réglages et laisse les commandes principales accessibles. WebGL 2 et une connexion restent nécessaires ; la fluidité sur de vrais téléphones reste à vérifier.
+
+L’accueil tactile conserve le gabian animé au-dessus du texte défilant. Le bouton plein écran est accessible dès l’accueil et via le raccourci dans le coin inférieur droit. Le passage en paysage tente le plein écran ; si le navigateur exige une interaction, le prochain toucher pendant la partie réessaie. Une sortie volontaire est respectée jusqu’à la prochaine rotation. En vue libre, « Afficher les contrôles » reste visible dans le coin.

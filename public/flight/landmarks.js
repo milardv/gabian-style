@@ -2,7 +2,7 @@ import * as T from '../vendor/three/three.module.js';
 import {landmarkKey} from './exploration.js';
 
 const overlaps=(a,b)=>a.left<b.right+8&&a.right>b.left-8&&a.top<b.bottom+8&&a.bottom>b.top-8;
-const obstacleSelector='.flight-header>div,.flight-location,.mission-card,.map-panel,.telemetry,.cockpit,.help,.exploration-panel,.exploration-toggle,.touch-pad,.touch-actions,.match-indicator';
+const obstacleSelector='.flight-header>div,.flight-location,.mission-card,.map-panel,.telemetry,.cockpit,.help,.exploration-panel,.exploration-toggle,.touch-pad,.touch-actions,#view-tools,.match-indicator';
 
 export class LandmarkOverlay {
  constructor(root,exploration){
