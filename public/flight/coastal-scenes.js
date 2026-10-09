@@ -41,8 +41,28 @@ export function updateDivers(life,s,time,near){
  s.ripples.forEach((ring,i)=>{ring.visible=splash>=0;if(splash>=0){ring.position.set(dx*s.diveDistance,-s.root.position.y-.75,dz*s.diveDistance);ring.scale.setScalar(1+splash*(4+i*2));ring.material.opacity=(1-splash)*.5;}});
  return cheering;
 }
+// Adult beachgoers in a relaxed, ordinary sunbathing pose.
+function sunbather(life,parent,index){
+ const root=new T.Group();root.userData={role:'adult-sunbather',age:28+index*7};
+ root.position.set(7,.25,-.5);root.rotation.y=(index-1)*.18;parent.add(root);
+ const skin=[0xe2b895,0xb87d55,0xd09b75][index],bottom=[0x164bc1,0xee550f,0x43b9ef][index];
+ life.mesh(parent,'box',[0xffe797,0xfff8e5,0x89d2f5][index],[1.8,.04,2.8],[7,.1,-.5]).rotation.y=root.rotation.y;
+ life.mesh(root,'sphere',skin,[.30,.16,.48],[0,0,-.08]);
+ for(const side of [-1,1]){
+  life.mesh(root,'sphere',skin,[.12,.10,.14],[side*.13,.13,-.28]);
+  const arm=life.mesh(root,'pole',skin,[.10,.64,.10],[side*.4,.02,-.15]);arm.rotation.x=Math.PI/2;arm.rotation.z=side*.2;
+  const leg=life.mesh(root,'pole',skin,[.15,.76,.15],[side*.17,-.02,.86]);leg.rotation.x=Math.PI/2;
+ }
+ life.mesh(root,'sphere',bottom,[.29,.13,.23],[0,0,.38]);
+ life.mesh(root,'sphere',skin,[.22,.21,.23],[0,.06,-.73]);
+ life.mesh(root,'sphere',[0x78523c,0x34302d,0xbaa16b][index],[.23,.15,.18],[0,.02,-.87]);
+ life.mesh(root,'box',0x23394a,[.34,.04,.10],[0,.27,-.74]);
+ life.mesh(parent,'sphere',0xe8c587,[.4,.07,.4],[7.7,.18,-1.3]);
+ life.mesh(parent,'canopy',0xe8c587,[.24,.22,.24],[7.7,.27,-1.3]);
+ return root;
+}
 export function buildBeach(life,s){
- s.grills=[];s.cooks=[];
+ s.grills=[];s.cooks=[];s.sunbathers=[];
  for(let family=0;family<3;family++){
   const x=(family-1)*3,z=(family-1)*16,root=new T.Group();root.position.set(x,0,z);s.root.add(root);
   life.parasol(root,4,0,[0xffe797,0x43b9ef,0xee550f][family]);
@@ -57,6 +77,7 @@ export function buildBeach(life,s){
   const cook=figure(life,root,[0xfff8e5,0x43b9ef,0xd79061][family]);cook.root.position.set(-2,1.05,1.6);cook.root.rotation.y=Math.PI;
   const spatula=life.mesh(cook.arms[0],'pole',0x838c96,[.05,.6,.05],[0,-.9,0]);life.mesh(spatula,'box',0xaeb6bb,[3,.35,2],[0,-.55,0]);s.cooks.push(cook);
   for(let i=0;i<5;i++){life.person(s,x+2+(i%3)*1.8,z-3+Math.floor(i/3)*4,family*5+i,i%2===0);const person=s.crowd.at(-1);person.size=i<2?.65:1;person.seated=i>=2;}
+  s.sunbathers.push(sunbather(life,root,family));
   const material=new T.MeshLambertMaterial({color:0xe4ddd1,transparent:true,opacity:.2,depthWrite:false});
   const smoke=new T.InstancedMesh(life.geometries.sphere,material,8);smoke.frustumCulled=false;root.add(smoke);
   // Puffs shrink at birth/exit; one shared translucent material keeps draw calls low.
