@@ -1,6 +1,6 @@
 import * as T from '../vendor/three/three.core.js';
 import {tileAt,tileBounds,localBounds,toGeo} from './geo.js';
-import {COAST_KEYS,COAST_URL} from './coast-config.js';
+import {COAST_KEYS,coastAssets,COAST_TERRAIN_VERSION} from './coast-config.js';
 
 // The overview supplies the distant landscape. Cache all detailed data in the
 // visible streaming area, without constructing extra meshes on the phone.
@@ -17,11 +17,10 @@ export function viewportResources(camera,world,x,z,quality='balanced'){
  tiles.sort((a,b)=>a.d-b.d);
  const paths=['/api/marseille/boundary','/api/marseille/overview','/api/marseille/overview-imagery'];
  for(const tile of tiles){
-  paths.push(`/api/marseille/terrain/${tile.key}?v=${COAST_KEYS.has(tile.key)?6:5}`,`/api/marseille/imagery/${tile.key}?size=${world.imageSizeFor({terrain:{bounds:tile.bounds}})}`,`/api/marseille/buildings/${tile.key}`,`/api/marseille/roads/${tile.key}`);
+  paths.push(`/api/marseille/terrain/${tile.key}?v=${COAST_KEYS.has(tile.key)?COAST_TERRAIN_VERSION:5}`,`/api/marseille/imagery/${tile.key}?size=${world.imageSizeFor({terrain:{bounds:tile.bounds}})}&v=4`,`/api/marseille/buildings/${tile.key}`,`/api/marseille/roads/${tile.key}`);
  }
  for(const key of COAST_KEYS){if(!visible(localBounds(tileBounds(...key.split('/').map(Number)))))continue;
-  const stem=key.replace('/','-'),dir=COAST_URL.slice(0,COAST_URL.lastIndexOf('/')+1);
-  paths.push(COAST_URL,`${dir}${stem}.jpg`,... [4,2,1].map(stride=>`${dir}${stem}-${stride}.glb`));
+  paths.push(...coastAssets(key));
  }
  return [...new Set(paths)];
 }

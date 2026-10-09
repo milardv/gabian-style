@@ -1,0 +1,24 @@
+{
+  "prepared_at": "2026-10-09T14:55:56.620Z",
+  "derived": true,
+  "terrain": {
+    "publisher": "IGN",
+    "source": "https://data.geopf.fr/wms-r",
+    "products": [
+      "LiDAR HD MNT 50 cm",
+      "LiDAR HD MNS 50 cm"
+    ],
+    "license": "Licence Ouverte 2.0"
+  },
+  "imagery": {
+    "publisher": "Métropole Aix-Marseille Provence",
+    "capture": "2022-04-14 / 2022-07-04",
+    "updated_at": "2023-11-23T10:54:25+00:00",
+    "source": "https://data.ampmetropole.fr/explore/assets/fr-orthophoto-mamp-2022/",
+    "license": "Licence Ouverte 2.0 (Etalab)",
+    "source_resolution_m": 0.05,
+    "output_resolution_m": 0.4346250572548336,
+    "fallback": "IGN BD ORTHO pour les zones transparentes"
+  },
+  "notes": "Reconstruction dérivée ; façades générées, aucun bâtiment photogrammétrique."
+}

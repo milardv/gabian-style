@@ -1,0 +1,5 @@
+IGN : LiDAR HD MNT/MNS et BD ORTHO ; données consultées le 2026-10-09.
+Métropole Aix-Marseille-Provence : orthophoto 2022, mise à jour 2023-11-23T10:54:25+00:00. Co-financeurs Enedis et Région Sud.
+Licence Ouverte 2.0 : https://github.com/etalab/licence-ouverte/blob/master/LO.md
+Sources et transformations : sources.json
+Modèles reconstruits et textures rééchantillonnées ; aucune caution officielle des producteurs.

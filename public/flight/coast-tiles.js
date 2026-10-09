@@ -7,7 +7,7 @@ export class CoastTiles {
  constructor(scene){
   this.scene=scene;this.tiles=new B.TilesRenderer(COAST_URL,scene);this.failed=false;this.bounds=[];
   this.tiles.errorTarget=10;this.tiles.downloadQueue.maxJobs=2;this.tiles.parseQueue.maxJobs=1;
-  this.tiles.lruCache.maxSize=24;this.tiles.lruCache.minSize=12;
+  this.tiles.lruCache.maxSize=40;this.tiles.lruCache.minSize=12;
   this.tiles.addEventListener('load-model',({scene:root,tile,url})=>{
    for(const mesh of root.getChildMeshes()){
     if(!mesh.material)continue;
@@ -17,7 +17,9 @@ export class CoastTiles {
     // gamma-space photos instead: reusing that buffer darkens them a second time.
     const image=tile.engineData.metadata?.images?.[0]?.uri;
     material.diffuseTexture=image&&url?new B.Texture(new URL(image,url).href,scene,{invertY:false,useSRGBBuffer:false,gammaSpace:true,samplingMode:B.Texture.TRILINEAR_SAMPLINGMODE}):original;
-    material.diffuseColor.set(1,1,1);material.specularColor.set(0,0,0);material.backFaceCulling=false;material.twoSidedLighting=true;material.maxSimultaneousLights=4;
+    if(material.diffuseTexture)material.diffuseTexture.anisotropicFilteringLevel=8;
+    material.disableLighting=true;material.emissiveTexture=material.diffuseTexture;material.emissiveColor.set(1,1,1);
+    material.diffuseColor.set(0,0,0);material.specularColor.set(0,0,0);material.backFaceCulling=false;material.twoSidedLighting=true;material.maxSimultaneousLights=4;
     mesh.material=material;mesh.renderingGroupId=1;mesh.isPickable=false;
     container.materials=container.materials.filter(item=>item!==old);container.materials.push(material);
     if(material.diffuseTexture!==original){container.textures=container.textures.filter(item=>item!==original);container.textures.push(material.diffuseTexture);original?.dispose();}

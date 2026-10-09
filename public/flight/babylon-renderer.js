@@ -79,6 +79,7 @@ export class BabylonRenderer {
   native.disableLighting=!!(source.isMeshBasicMaterial||source.isSpriteMaterial||source.isLineBasicMaterial);
   if(native.disableLighting)color(native.emissiveColor,source.color);
   else if(source.emissive)color(native.emissiveColor,source.emissive,source.emissiveIntensity??1);
+  else native.emissiveColor.setAll(0);
   if(source.specular)color(native.specularColor,source.specular);
   else native.specularColor.setAll(source.isMeshStandardMaterial?(1-(source.roughness??1))*.2:0);
   native.specularPower=source.shininess??Math.max(1,(1-(source.roughness??1))*128);
@@ -88,6 +89,11 @@ export class BabylonRenderer {
   native.alphaMode=source.blending===2?B.Constants.ALPHA_ADD:B.Constants.ALPHA_COMBINE;
   native.transparencyMode=source.transparent?B.Material.MATERIAL_ALPHABLEND:B.Material.MATERIAL_OPAQUE;
   native.diffuseTexture=this.texture(source.map);native.useAlphaFromDiffuseTexture=!!source.transparent;
+  // Aerial photos already contain sunlight and shadows. Re-lighting them makes
+  // cliffs and sea artificially dark and reveals seams between tile renderers.
+  const photo=source.userData?.photographic&&native.diffuseTexture;
+  native.emissiveTexture=photo||null;
+  if(photo){native.disableLighting=true;native.emissiveColor.setAll(1);native.diffuseColor.setAll(0);}
   if(native.diffuseTexture)native.diffuseTexture.hasAlpha=!!source.transparent;
   native.fillMode=source.isLineBasicMaterial?B.Material.LineListDrawMode:B.Material.TriangleFillMode;
   return native;

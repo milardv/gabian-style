@@ -8,16 +8,17 @@ test('initial viewport includes full data for visible tiles and omits distant/be
  const [x,z]=toLocal(5.3738,43.295),camera=new T.PerspectiveCamera(65,1,.08,35000);camera.position.set(x,120,z);camera.lookAt(x,0,z-2000);
  const world={boundary:{bounds:localBounds([5.2,43.16,5.57,43.43])},imageSizeFor:()=>1024};
  const paths=viewportResources(camera,world,x,z,'mobile'),[tx,ty]=tileAt(5.3738,43.295);
- assert.ok(paths.includes(`/api/marseille/roads/${tx}/${ty}`));assert.ok(paths.includes(`/api/marseille/buildings/${tx}/${ty}`));assert.ok(paths.includes(`/api/marseille/imagery/${tx}/${ty}?size=1024`));assert.ok(paths.includes('/api/marseille/overview-imagery'));
+ assert.ok(paths.includes(`/api/marseille/roads/${tx}/${ty}`));assert.ok(paths.includes(`/api/marseille/buildings/${tx}/${ty}`));assert.ok(paths.includes(`/api/marseille/imagery/${tx}/${ty}?size=1024&v=4`));assert.ok(paths.includes('/api/marseille/overview-imagery'));
  assert.ok(!paths.includes(`/api/marseille/roads/${tx}/${ty+1}`));assert.ok(!paths.includes(`/api/marseille/roads/${tx}/${ty-2}`));assert.equal(new Set(paths).size,paths.length);
  assert.ok(viewportResources(camera,world,x,z,'high').length>paths.length);
 });
 test('visible native coastal tiles include every LOD and their photographs',()=>{
  const [x,z]=toLocal(5.35,43.28),camera=new T.PerspectiveCamera(65,1,.08,35000);camera.position.set(x,300,z);camera.lookAt(x,0,z);
  const world={boundary:{bounds:localBounds([5.2,43.16,5.57,43.43])},imageSizeFor:()=>1024},paths=viewportResources(camera,world,x,z,'mobile');
- assert.ok(paths.includes('/geodata/corniche-v1/tileset.json'));
- for(const stride of [1,2,4])assert.ok(paths.includes(`/geodata/corniche-v1/16870-12005-${stride}.glb`));
- assert.ok(paths.includes('/geodata/corniche-v1/16870-12005.jpg'));
+ assert.ok(paths.includes('/geodata/corniche-v2/tileset.json'));
+ assert.ok(paths.includes('/geodata/corniche-v2/16870-12005-8.glb'));
+ for(let q=0;q<4;q++)for(const stride of [1,2])assert.ok(paths.includes(`/geodata/corniche-v2/16870-12005-q${q}-${stride}.glb`));
+ assert.ok(paths.includes('/geodata/corniche-v2/16870-12005.jpg'));
 });
 function fixture(){
  const entries=new Map(),worker={controller:{}};let active=0,maximum=0,calls=0;

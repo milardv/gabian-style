@@ -1,5 +1,6 @@
 import { ShapeUtils, Vector2 } from '../vendor/three/three.core.js';
 import { sampleGrid } from './geo.js';
+import {measuredRoofHeight,subdivideRoof} from './measured-roofs.js';
 export function buildGeometry(buildings, terrain, structures = []) {
   const sides = [], uvs = [], roofs = [], roofUvs = [], colors = [], domes = [], domeColors = [], towers = [], towerColors = [], statues = [], statueColors = [];
   const push = (array, a, b, c) => array.push(...a, ...b, ...c);
@@ -7,6 +8,14 @@ export function buildGeometry(buildings, terrain, structures = []) {
     const ground = sampleGrid(terrain, ...building.center);
     const base = Math.max(ground - .8, building.base ?? ground);
     const top = Math.max(base + building.height, building.roof ?? 0);
+    const measured=!!terrain.surfaceHeights&&building.nature!=='Eglise',roofFloor=measured&&Number.isFinite(building.roof)?Math.max(base+2,building.roof):top;
+    const roofHeight=point=>{
+      if(!measured)return top;
+      // Keep the surveyed eaves on every footprint edge, including courtyards.
+      // Sampling a mixed ground/roof pixel there would tear roofs away from walls.
+      for(const ring of building.rings)for(let i=1;i<ring.length;i++){const a=ring[i-1],b=ring[i],dx=b[0]-a[0],dz=b[1]-a[1],length=dx*dx+dz*dz;if(!length)continue;const t=((point[0]-a[0])*dx+(point[1]-a[1])*dz)/length;if(t>=0&&t<=1&&Math.hypot(point[0]-a[0]-t*dx,point[1]-a[1]-t*dz)<.01)return roofFloor;}
+      return measuredRoofHeight(terrain,point,roofFloor,top+Math.min(10,building.height*.5));
+    };
     building.collision_roof = top;
     const rings = building.rings.map(ring => {
       const list = ring.slice();
@@ -20,9 +29,8 @@ export function buildGeometry(buildings, terrain, structures = []) {
     const style = [...building.id].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 4;
     const tint=.88+style*.035;
     const [west, north, east, south] = terrain.bounds;
-    for (const tri of triangles) {
-      for (const index of [tri[0], tri[2], tri[1]]) { const point=points[index];roofs.push(point[0], top, point[1]);roofUvs.push((point[0]-west)/(east-west),1-(point[1]-north)/(south-north));colors.push(1,1,1); }
-    }
+    const roofTriangle=(a,b,c)=>{for(const point of [a,c,b]){const h=roofHeight(point);building.collision_roof=Math.max(building.collision_roof,h);roofs.push(point[0],h,point[1]);roofUvs.push((point[0]-west)/(east-west),1-(point[1]-north)/(south-north));colors.push(1,1,1);}};
+    for(const tri of triangles){const [a,b,c]=tri.map(i=>points[i]);if(measured)subdivideRoof(a,b,c,roofTriangle);else roofTriangle(a,b,c);}
     if (building.nature === 'Eglise') {
       const xs = rings[0].map(p => p[0]), zs = rings[0].map(p => p[1]);
       const width = Math.max(...xs) - Math.min(...xs), depth = Math.max(...zs) - Math.min(...zs);
@@ -39,9 +47,9 @@ export function buildGeometry(buildings, terrain, structures = []) {
     }
     for (const ring of rings) for (let i = 0; i < ring.length; i++) {
       const a = ring[i], b = ring[(i + 1) % ring.length];
-      const baseA=Math.max(sampleGrid(terrain,...a)-.8,building.base??ground),baseB=Math.max(sampleGrid(terrain,...b)-.8,building.base??ground),width=Math.hypot(a[0]-b[0],a[1]-b[1])/3.4,heightA=(top-baseA)/3.2,heightB=(top-baseB)/3.2;
-      push(sides,[a[0],baseA,a[1]],[b[0],baseB,b[1]],[b[0],top,b[1]]);
-      push(sides,[a[0],baseA,a[1]],[b[0],top,b[1]],[a[0],top,a[1]]);
+      const baseA=Math.max(sampleGrid(terrain,...a)-.8,building.base??ground),baseB=Math.max(sampleGrid(terrain,...b)-.8,building.base??ground),width=Math.hypot(a[0]-b[0],a[1]-b[1])/3.4,topA=roofHeight(a),topB=roofHeight(b),heightA=(topA-baseA)/3.2,heightB=(topB-baseB)/3.2;
+      push(sides,[a[0],baseA,a[1]],[b[0],baseB,b[1]],[b[0],topB,b[1]]);
+      push(sides,[a[0],baseA,a[1]],[b[0],topB,b[1]],[a[0],topA,a[1]]);
       const u=style/4,w=width/4;uvs.push(u,0,u+w,0,u+w,heightB,u,0,u+w,heightB,u,heightA);
     }
   }

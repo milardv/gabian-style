@@ -79,7 +79,7 @@ En scooter, maintenir `Maj` en tournant déclenche un dérapage assisté à part
 
 ## Internet et téléphone
 
-Le [pilote Corniche–Malmousque](docs/rendu-3d.md) utilise désormais du relief LiDAR IGN et des 3D Tiles natives Babylon, chargées progressivement et conservées dans le cache mobile.
+Les [secteurs détaillés du littoral](docs/rendu-3d.md) utilisent du relief LiDAR IGN au pas d’environ 1,7 m, des toitures dérivées du sursol et des orthophotos métropolitaines 2022. Six tuiles couvrent la Corniche–Malmousque, Maïre et le départ Calanques. Les 3D Tiles natives Babylon sont chargées progressivement et conservées dans le cache mobile. Les producteurs, dates, transformations et licences ouvertes sont documentés dans les crédits et les fichiers de données.
 
 Voir [le guide de déploiement](docs/deploiement.md) : démo Render gratuite avec HTTPS, passage possible à un disque persistant payant, ou conteneur Docker sur votre serveur. `HOST=0.0.0.0` permet l’accès réseau ; `/healthz` contrôle le serveur sans appeler l’IGN.
 

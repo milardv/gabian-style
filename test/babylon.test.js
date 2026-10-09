@@ -97,3 +97,9 @@ test('sea backdrop renders before photographic terrain with independent depth',t
  assert.equal(renderer.objects.get(terrain).native.renderingGroupId,1);
  assert.equal(renderer.scene.getAutoClearDepthStencilSetup(1).autoClear,true);
 });
+test('photographic terrain keeps baked lighting and shares its gamma-space photo with emission',t=>{
+ const {renderer,scene,camera}=fixture();t.after(()=>renderer.dispose());
+ const material=new T.MeshLambertMaterial({color:0xffffff});material.userData.photographic=true;material.map=new T.Texture({src:'https://gabian.example/photo.jpg',width:1,height:1});material.map.colorSpace=T.SRGBColorSpace;
+ const mesh=new T.Mesh(new T.PlaneGeometry(1,1),material);scene.add(mesh);renderer.sync(scene,camera);const native=renderer.objects.get(mesh).native.material;
+ assert.equal(native.disableLighting,true);assert.equal(native.emissiveTexture,native.diffuseTexture);assert.equal(native.emissiveTexture.gammaSpace,true);assert.equal(native.emissiveColor.r,1);assert.equal(native.diffuseColor.r,0);
+});

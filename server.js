@@ -1,5 +1,6 @@
 import {pwaAssets,renderWorker} from './lib/pwa-assets.js';
 import { createServer } from 'node:http';
+import {gzipSync} from 'node:zlib';
 import { readFileSync, existsSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,8 +16,10 @@ const userAgent = 'GabianStyle/0.1 (local Marseille game)';
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.png': 'image/png', '.glb':'model/gltf-binary', '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json; charset=utf-8' };
 
 function json(response, status, body) {
-  response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
-  response.end(JSON.stringify(body));
+  const raw=Buffer.from(JSON.stringify(body)),compressed=raw.length>1024&&/\bgzip\b(?!\s*;\s*q=0(?:\D|$))/i.test(response.req?.headers['accept-encoding']||'');
+  const bytes=compressed?gzipSync(raw,{level:4}):raw;
+  response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff','Vary':'Accept-Encoding','Content-Length':bytes.length,...(compressed?{'Content-Encoding':'gzip'}:{}) });
+  response.end(bytes);
 }
 function fail(response, status, message) { json(response, status, { error: message }); }
 

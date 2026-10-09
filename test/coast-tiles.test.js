@@ -7,29 +7,30 @@ import {COAST_KEYS} from '../public/flight/coast-config.js';
 import {marseilleTerrain} from '../lib/marseille-data.js';
 import {sampleGrid,toLocal} from '../public/flight/geo.js';
 import {pwaAssets} from '../lib/pwa-assets.js';
-const dir=new URL('../public/geodata/corniche-v1/',import.meta.url);
+const dir=new URL('../public/geodata/corniche-v2/',import.meta.url);
 
 test('pilot relief is served locally and removes the spurious coastal elevation',async()=>{
  for(const [lon,lat,key]of [[5.35315,43.2789,'16871/12005'],[5.3471,43.2805,'16870/12005']]){
   const grid=await marseilleTerrain(...key.split('/').map(Number));
-  assert.equal(grid.size,257);assert.equal(grid.heights.length,257**2);assert.ok(grid.lidar_samples>60000);assert.ok(grid.sample_spacing_m<3.5);
+  assert.equal(grid.size,513);assert.equal(grid.heights.length,513**2);assert.ok(grid.lidar_samples>60000);assert.ok(grid.sample_spacing_m<1.75);
   assert.ok(sampleGrid(grid,...toLocal(lon,lat))<1);assert.ok(grid.heights.every(h=>Number.isFinite(h)&&h>=0&&h<100));
  }
 });
 test('3D Tiles LOD meshes match physics vertices, axes and photographic UVs',async()=>{
  const tileset=JSON.parse(await readFile(new URL('tileset.json',dir),'utf8'));
  assert.equal(tileset.asset.version,'1.1');assert.equal(tileset.root.children.length,COAST_KEYS.size);
- for(const coarse of tileset.root.children){let tile=coarse;const counts=[];
-  while(tile){const bytes=await readFile(new URL(tile.content.uri,dir));assert.equal(bytes.readUInt32LE(0),0x46546c67);assert.equal(bytes.readUInt32LE(8),bytes.length);
-   const doc=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)).toString()),p=doc.accessors[doc.meshes[0].primitives[0].attributes.POSITION],uv=doc.accessors[doc.meshes[0].primitives[0].attributes.TEXCOORD_0],binStart=28+bytes.readUInt32LE(12),pv=doc.bufferViews[p.bufferView],uvv=doc.bufferViews[uv.bufferView];
-   counts.push(p.count);assert.equal(bytes.readFloatLE(binStart+uvv.byteOffset+4),0);
-   const matrix=B.Matrix.FromArray(tileset.root.transform),axis=B.Matrix.RotationX(Math.PI/2),v=new B.Vector3(...tile.extras.bounds.slice(0,2),0);
-   const round=B.Vector3.TransformCoordinates(B.Vector3.TransformCoordinates(v,axis),matrix);assert.ok(B.Vector3.Distance(v,round)<1e-5);
-   if(!tile.children){const grid=await marseilleTerrain(...tile.extras.key.split('/').map(Number));assert.equal(bytes.readFloatLE(binStart+pv.byteOffset),Math.fround(grid.bounds[0]));assert.equal(bytes.readFloatLE(binStart+pv.byteOffset+4),Math.fround(grid.heights[0]));assert.equal(p.count,grid.heights.length);}
-   tile=tile.children?.[0];
-  }
-  assert.deepEqual(counts,[65**2,129**2,257**2]);
- }
+ const walk=async tile=>{
+  const bytes=await readFile(new URL(tile.content.uri,dir));assert.equal(bytes.readUInt32LE(0),0x46546c67);assert.equal(bytes.readUInt32LE(8),bytes.length);
+  const doc=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)).toString()),p=doc.accessors[doc.meshes[0].primitives[0].attributes.POSITION],uv=doc.accessors[doc.meshes[0].primitives[0].attributes.TEXCOORD_0],binStart=28+bytes.readUInt32LE(12),pv=doc.bufferViews[p.bufferView],uvv=doc.bufferViews[uv.bufferView];
+  assert.equal(bytes.readFloatLE(binStart+uvv.byteOffset+4),0);
+  const matrix=B.Matrix.FromArray(tileset.root.transform),axis=B.Matrix.RotationX(Math.PI/2),v=new B.Vector3(...tile.extras.bounds.slice(0,2),0);
+  const round=B.Vector3.TransformCoordinates(B.Vector3.TransformCoordinates(v,axis),matrix);assert.ok(B.Vector3.Distance(v,round)<1e-5);
+  if(!tile.children){const grid=await marseilleTerrain(...tile.extras.key.split('/').map(Number)),q=tile.extras.quarter,offset=Math.floor(q/2)*256*grid.size+(q%2)*256;
+   assert.equal(bytes.readFloatLE(binStart+pv.byteOffset),Math.fround(tile.extras.bounds[0]));assert.equal(bytes.readFloatLE(binStart+pv.byteOffset+4),Math.fround(grid.heights[offset]));assert.equal(p.count,257**2);
+  }else{assert.equal(p.count,tile.extras.quarter===undefined?65**2:129**2);for(const child of tile.children)await walk(child);}
+ };
+ for(const coarse of tileset.root.children){assert.equal(coarse.children.length,4);await walk(coarse);}
+
 });
 test('fallback is masked only under visible, shader-ready native tiles and returns on removal',()=>{
  const engine=new B.NullEngine(),scene=new B.Scene(engine);scene.useRightHandedSystem=true;const coast=new CoastTiles(scene);
@@ -56,8 +57,14 @@ test('glTF sRGB photos are reloaded in gamma space for the photographic Standard
  const engine=new B.NullEngine(),scene=new B.Scene(engine);scene.useRightHandedSystem=true;const coast=new CoastTiles(scene),mesh=new B.Mesh('photo',scene),old=new B.StandardMaterial('original',scene);
  const original=new B.Texture(null,scene,{useSRGBBuffer:true,gammaSpace:false});old.albedoTexture=original;mesh.material=old;
  const container={materials:[old],textures:[original]},tile={engineData:{container,metadata:{images:[{uri:'16871-12005.jpg'}]}}};
- try{coast.tiles.dispatchEvent({type:'load-model',scene:{getChildMeshes:()=>[mesh]},tile,url:'https://gabian.example/geodata/corniche-v1/16871-12005-1.glb'});
+ try{coast.tiles.dispatchEvent({type:'load-model',scene:{getChildMeshes:()=>[mesh]},tile,url:'https://gabian.example/geodata/corniche-v2/16871-12005-1.glb'});
   const texture=mesh.material.diffuseTexture;assert.notEqual(texture,original);assert.equal(texture.gammaSpace,true);assert.equal(texture._useSRGBBuffer,false);assert.equal(texture.invertY,false);
-  assert.equal(texture.url,'https://gabian.example/geodata/corniche-v1/16871-12005.jpg');assert.deepEqual(container.textures,[texture]);assert.equal(mesh.material.twoSidedLighting,true);
+  assert.equal(texture.url,'https://gabian.example/geodata/corniche-v2/16871-12005.jpg');assert.deepEqual(container.textures,[texture]);assert.equal(mesh.material.twoSidedLighting,true);
  }finally{coast.dispose();scene.dispose();engine.dispose();}
+});
+test('Maire and the Calanques have measured relief, while source metadata identifies the open products',async()=>{
+ for(const key of ['16869/12014','16870/12014','16877/12014']){
+  const grid=await marseilleTerrain(...key.split('/').map(Number));assert.equal(grid.size,513);assert.ok(grid.lidar_samples>200000);assert.ok(grid.heights.some(h=>h>70));assert.equal(grid.surfaceHeights.length,grid.heights.length);
+ }
+ const sources=JSON.parse(await readFile(new URL('sources.json',dir),'utf8'));assert.equal(sources.imagery.license,'Licence Ouverte 2.0 (Etalab)');assert.match(sources.imagery.publisher,/Marseille/);assert.equal(sources.imagery.updated_at,'2023-11-23T10:54:25+00:00');assert.ok(sources.imagery.output_resolution_m<.44);assert.match(await readFile(new URL('LICENSE.txt',dir),'utf8'),/2022/);
 });
