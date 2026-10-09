@@ -32,10 +32,14 @@ export async function precacheViewport(paths,{win=window,onProgress=()=>{},concu
  // Wait for control here, while leaving the game playable.
  if(!worker.controller)await new Promise(resolve=>{
   const finish=()=>{win.clearTimeout(timer);worker.removeEventListener('controllerchange',changed);resolve();},changed=()=>{if(worker.controller)finish();};
-  const timer=win.setTimeout(finish,30000);worker.addEventListener('controllerchange',changed);changed();
+  onProgress({waiting:true});
+  // A slow Render wake-up/download is not evidence of an unsupported browser.
+  // Keep listening after the notice; claim() can arrive much later on mobile.
+  const timer=win.setTimeout(()=>onProgress({waiting:true,slow:true}),30000);
+  worker.addEventListener('controllerchange',changed);worker.ready?.then(changed).catch(()=>{});changed();
  });
- if(!worker.controller)return{unsupported:true};
- const urls=[...new Set(paths)],store=await win.caches.open('gabian-map-v1'),result={total:urls.length,completed:0,cached:0,failed:0};let next=0;
+ let store;try{store=await win.caches.open('gabian-map-v1');}catch{return{unavailable:true};}
+ const urls=[...new Set(paths)],result={total:urls.length,completed:0,cached:0,failed:0};let next=0;
  onProgress({...result});
  await Promise.all(Array.from({length:Math.min(concurrency,urls.length)},async()=>{
   while(next<urls.length){const path=urls[next++],url=new URL(path,win.location.origin);url.searchParams.sort();

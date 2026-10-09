@@ -36,3 +36,15 @@ test('first visit waits for service-worker control before requesting geographic 
  const pending=precacheViewport(['/first'],{win:f.win});await new Promise(r=>setImmediate(r));assert.equal(f.calls,0);
  f.worker.controller={};changed();await pending;assert.equal(f.calls,1);
 });
+test('installation beyond 30 seconds remains pending, then preloads when the worker claims the page',async()=>{
+ const f=fixture(),progress=[];f.worker.controller=null;let changed,timer,finished=false;
+ f.win.setTimeout=callback=>{timer=callback;return 1;};f.win.clearTimeout=()=>{};
+ f.worker.addEventListener=(_type,listener)=>changed=listener;f.worker.removeEventListener=()=>{};
+ const pending=precacheViewport(['/slow-first-install'],{win:f.win,onProgress:v=>progress.push(v)}).then(result=>{finished=true;return result;});
+ timer();await new Promise(r=>setImmediate(r));assert.equal(finished,false);assert.equal(f.calls,0);assert.deepEqual(progress.at(-1),{waiting:true,slow:true});
+ f.worker.controller={};changed();assert.equal((await pending).cached,1);assert.equal(progress.at(-1).completed,1);
+});
+test('unsupported APIs and actual storage denial are distinct from a pending installation',async()=>{
+ const f=fixture();f.win.isSecureContext=false;assert.deepEqual(await precacheViewport([],{win:f.win}),{unsupported:true});
+ f.win.isSecureContext=true;f.win.caches.open=async()=>{throw Error('Storage denied');};assert.deepEqual(await precacheViewport([],{win:f.win}),{unavailable:true});
+});
