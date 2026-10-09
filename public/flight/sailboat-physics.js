@@ -3,7 +3,13 @@ import {damped} from './scooter-physics.js';
 export const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
 const approach=(a,b,k,dt)=>a+(b-a)*(1-Math.exp(-k*dt));
 // Wind travels southeast: its source is northwest, as for the mistral.
+export const MAX_MISTRAL=200/3.6;
 export const WIND_DIRECTION=Math.atan2(.55,-.83);
+export function sailTrimTarget(angle){return clamp((Math.abs(angle)-.6)*.65,.08,1);}
+export function sailingWind(s,wind){
+ const v=clamp(wind,0,MAX_MISTRAL),wx=Math.sin(WIND_DIRECTION)*v-s.vx,wz=-Math.cos(WIND_DIRECTION)*v-s.vz;
+ return {speed:Math.hypot(wx,wz),angle:angleDelta(s.heading,Math.atan2(-wx,wz))};
+}
 export function waveHeight(x,z,time,wind){
  const a=clamp(wind,0,12)*.018;
  return .35+a*Math.sin(x*.11+z*.16-time*1.55)+a*.45*Math.sin(x*.29-z*.08-time*2.1);
@@ -18,18 +24,17 @@ export function createSailboat(x=0,z=0,heading=0){
 }
 export function stepSailboat(s,input,dt,environment={}){
  if(dt<=0||s.grounded)return s;
- const wind=clamp(environment.wind??2,0,12);s.time+=dt;
+ const wind=clamp(environment.wind??2,0,MAX_MISTRAL);s.time+=dt;
  s.trim=clamp(s.trim+(input.trim||0)*dt*.35,.05,1);
  [s.rudder,s.rudderVelocity]=damped(s.rudder,s.rudderVelocity,clamp(input.turn||0,-1,1)*.52,7,dt);
- const wx=Math.sin(WIND_DIRECTION)*wind-s.vx,wz=-Math.cos(WIND_DIRECTION)*wind-s.vz;
- s.apparentWind=Math.hypot(wx,wz);
- const source=Math.atan2(-wx,wz);s.windAngle=angleDelta(s.heading,source);
- const ideal=clamp((Math.abs(s.windAngle)-.6)*.65,.08,1),efficiency=Math.exp(-Math.pow((s.trim-ideal)*2.3,2));
+ const apparent=sailingWind(s,wind);s.apparentWind=apparent.speed;s.windAngle=apparent.angle;
+ const ideal=sailTrimTarget(s.windAngle),efficiency=Math.exp(-Math.pow((s.trim-ideal)*2.3,2));
  const polar=sailingPolar(s.windAngle);s.power=polar*efficiency;s.luffing=polar<.12||s.trim>ideal+.3;
  // A 6 m displacement hull: progressive acceleration, drag and speed-dependent helm.
  const forwardSpeed=s.vx*Math.sin(s.heading)-s.vz*Math.cos(s.heading);
  const thrust=s.apparentWind*s.apparentWind*.009*s.power;
- const drive=thrust-.11*forwardSpeed-.065*forwardSpeed*Math.abs(forwardSpeed);
+ const hullDrag=.065*forwardSpeed*Math.abs(forwardSpeed)+Math.pow(Math.max(0,forwardSpeed-3.2),3)*.8;
+ const drive=thrust-.11*forwardSpeed-hullDrag;
  const side=Math.sign(Math.sin(s.windAngle));
  const leeway=-side*wind*.012*s.power;
  s.vx+=((Math.sin(s.heading)*Math.max(0,forwardSpeed)+Math.cos(s.heading)*leeway-s.vx)*1.8+Math.sin(s.heading)*drive)*dt;
