@@ -6,7 +6,7 @@ Les données préparées sont livrées dans `public/geodata/corniche-v1/`. Elles
 
 Le moteur natif Babylon charge les GLB par `3d-tiles-renderer/babylonjs`, avec trois niveaux de détail : 65, 129 et 257 points par côté. Le niveau dépend de la caméra et de la qualité choisie ; le mode mobile accepte une erreur visuelle plus grande. Le décor classique reste visible jusqu'à ce que les tuiles natives et leurs shaders soient prêts, et revient si une tuile est retirée ou indisponible. Les photos marines sont conservées.
 
-Les fichiers géographiques sont téléchargés à la demande et conservés dans le cache carte de la PWA, avec le quota habituel. Ils sont exclus du téléchargement initial des fichiers du jeu. Seuls les niveaux déjà parcourus sont disponibles hors ligne.
+Les fichiers géographiques sont conservés dans le cache carte de la PWA, avec le quota habituel, et exclus du précache des fichiers de l'app. Dès l'accueil, la vue initiale précharge les données détaillées visibles (relief, photos, bâtiments et routes), ainsi que tous les niveaux des tuiles 3D visibles. Le panorama lointain est conservé via le relief et l'orthophoto générale. Deux téléchargements au maximum tournent en parallèle ; la partie reste jouable pendant ce préchargement. Une progression indique les fichiers réellement conservés et les éventuelles données indisponibles. Les secteurs suivants continuent à se charger à la demande.
 
 ## Reconstruction
 

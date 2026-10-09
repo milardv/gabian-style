@@ -1,5 +1,7 @@
 import * as T from '../vendor/three/three.core.js';
 import {BabylonRenderer} from './babylon-renderer.js';
+import {viewportResources,precacheViewport} from './viewport-cache.js';
+let viewportPrefetched=false;
 import {cacheReady} from '../pwa.js';
 import {LoadingProgress,showLoadingProgress} from './loading-progress.js';
 import {FullscreenControls} from './fullscreen.js';
@@ -170,6 +172,7 @@ function frame(ms){const dt=last?Math.min((ms-last)/1000,.5):0;last=ms;elapsed+=
  if(elapsed-stream>1){stream=elapsed;world.update(s.x,s.z,$('quality').value,s.heading,s.speed,vehicle==='scooter');if(!paused){path.push([s.x,s.z]);if(path.length>600)path.shift();}}
  if(elapsed-telemetry>.15&&!restarting){telemetry=elapsed;$('speed-value').textContent=vehicle==='sailboat'?(s.speed*1.94384).toFixed(1):Math.round(s.speed*3.6);$('altitude-value').textContent=Math.round(s.altitude);$('clearance-value').textContent=Math.round(s.altitude-world.surface(s.x,s.z));$('heading-value').textContent=String(Math.round((s.heading*180/Math.PI%360+360)%360)).padStart(3,'0');$('flight-state').textContent=vehicle==='sailboat'?(s.grounded?'Échoué — repartir':paused?'Voilier en pause':s.waitingForWater?'Carte en chargement…':windSpeed()===0?'Calme plat':Math.abs(s.windAngle)<40*Math.PI/180?'Face au vent · tire des bords':s.luffing?'Voile qui faseye · borde un peu':'Sous voile'):vehicle==='scooter'?(paused?'TMAX à l’arrêt':s.airborne?'TMAX · en l’air':nitro?'Nitro · plein gaz':s.drift>.2&&Math.abs(s.slipAngle)>.04?'Dérapage · glisse contrôlée':'Conduite'):state.collided?'Contact — repartir':paused?'Vol en pause':state.stalled?'Décrochage : gagnez de la vitesse':nitro?'Nitro · plein gaz':life?.updraft(s,windSpeed())>.5?'Mistral · ascendance':glide?'Vol plané':'En vol';drawMap();}}
  if(started&&state&&!document.body.classList.contains('clean'))landmarkOverlay.update(world,camera,activeState()||state,innerWidth,innerHeight,dt);
+ if(!viewportPrefetched&&state&&elapsed>.5){viewportPrefetched=true;const active=activeState()||state;const resources=viewportResources(camera,world,active.x,active.z,$('quality').value);const report=({total,completed,cached,failed})=>{const done=completed===total;for(const el of document.querySelectorAll('[data-viewport-cache]'))el.textContent=done?`Vue initiale : ${cached}/${total} fichiers en cache${failed?' · certaines données restent indisponibles':''}.`:`Cache de la vue : ${Math.round(completed/total*100)} % · ${completed}/${total} fichiers`;};precacheViewport(resources,{onProgress:report}).then(result=>{if(result.unsupported)for(const el of document.querySelectorAll('[data-viewport-cache]'))el.textContent='Le cache local est indisponible dans ce navigateur.';}).catch(()=>{});}
  renderer.render(world.scene,camera);}
 
 function resize(){renderer.quality=$('quality').value;renderer.setPixelRatio(Math.min(devicePixelRatio,$('quality').value==='mobile'?1:$('quality').value==='high'?1.8:1.25));renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
