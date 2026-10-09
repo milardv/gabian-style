@@ -8,6 +8,10 @@ test('Maire uses the finer IGN grid, urban tiles retain their existing size', ()
   assert.equal(terrainSize(tileBounds(...tileAt(5.34, 43.21))), 161);
   assert.equal(terrainSize(tileBounds(...tileAt(5.374, 43.295))), 81);
 });
+test('Corniche, Malmousque and Prado receive fine coastal terrain, city center remains unchanged', () => {
+  for (const point of [[5.35315,43.2789],[5.3471,43.2805],[5.3495,43.2848],[5.371868,43.261952]]) assert.equal(terrainSize(tileBounds(...tileAt(...point))),161);
+  assert.equal(terrainSize(tileBounds(...tileAt(5.3959,43.2698))),81);
+});
 test('nearby relief remains at full resolution including mobile tile corners and adjacent cliffs', () => {
   for (const quality of ['mobile', 'balanced', 'high']) {
     assert.equal(terrainLOD([0, 0, 900, 900], [1, 1], quality), 1);
