@@ -1,6 +1,7 @@
 import * as T from '../vendor/three/three.module.js';
 import {tileAt,toGeo} from './geo.js';
-import {buildDivers,updateDivers,buildBeach,updateBeach} from './coastal-scenes.js';
+import {buildDivers,updateDivers,buildBeach,updateBeach,buildSunSpot} from './coastal-scenes.js';
+import {sunPatches} from './coastal-placement.js';
 import {LIFE_SCENES,ferryProgress,sardineActive,nearbyReaction,coastalUpdraft} from './life-rules.js';
 
 // Small illustrated scenes. Shared meshes/materials, lazy construction, no extra data service.
@@ -25,6 +26,7 @@ export class MarseilleLife {
   s.bodies.frustumCulled=s.heads.frustumCulled=s.arms.frustumCulled=false;
  }
  findGround(s){
+  if(s.type==='sunbathing'){s.sunPatches=sunPatches(this.world,s);return s.sunPatches[0]||null;}
   if(s.id==='ferry'||s.id==='sardine')return{x:s.x,z:s.z,y:1.8};
   if(s.id==='divers')return{x:s.x,z:s.z,y:Math.max(s.roadHeight,this.world.ground(s.x,s.z))};
   if(s.id==='panier')return{x:s.x,z:s.z,y:this.world.surface(s.x,s.z)+1};
@@ -45,8 +47,9 @@ export class MarseilleLife {
   if(s.id==='panier')this.buildPanier(s);
   if(s.id==='sardine')this.buildSardine(s);
   if(s.id==='divers')buildDivers(this,s);
+  if(s.type==='sunbathing')buildSunSpot(this,s,s.sunPatches);
   if(s.id==='prado'||s.id==='prado-sud')buildBeach(this,s);
-  if(s.id!=='ferry'&&s.id!=='panier'&&s.id!=='sardine'&&s.id!=='divers'){
+  if(s.type!=='sunbathing'&&s.id!=='ferry'&&s.id!=='panier'&&s.id!=='sardine'&&s.id!=='divers'){
    for(const child of s.root.children){const x=anchor.x+child.position.x,z=anchor.z+child.position.z;if(this.world.surface(x,z)-this.world.ground(x,z)>3)child.visible=false;}
    s.crowd=s.crowd.filter(p=>this.world.surface(anchor.x+p.x,anchor.z+p.z)-this.world.ground(anchor.x+p.x,anchor.z+p.z)<3);
   }
@@ -128,12 +131,12 @@ export class MarseilleLife {
    if(active&&distance<650&&!ready&&!s.loading&&t>=(s.retryAt||0)){
     s.loading=true;this.world.prime(s.x,s.z).catch(()=>{s.retryAt=this.time+30;}).finally(()=>{s.loading=false;});
    }
-   if(active&&distance<1500&&!s.built&&ready&&t>=(s.buildAt||0)){s.buildAt=t+2;this.build(s);}
-   if(!s.built)continue;s.root.visible=active&&distance<1800;
+   if(active&&distance<(s.type==='sunbathing'?650:1500)&&!s.built&&ready&&t>=(s.buildAt||0)){s.buildAt=t+2;this.build(s);}
+   if(!s.built)continue;s.root.visible=active&&distance<(s.type==='sunbathing'?850:1800);
    if(s.gulls)for(const {bird}of s.gulls)bird.root.visible=s.root.visible&&distance<550;
    if(!s.root.visible)continue;
    let reacting=this.current===s.id&&t<this.cryUntil;
-   if(s.id!=='ferry'&&s.id!=='sardine')s.root.position.y=s.id==='panier'?this.world.surface(s.anchor.x,s.anchor.z)+1:s.id==='divers'?Math.max(s.roadHeight,this.world.ground(s.anchor.x,s.anchor.z)):this.world.ground(s.anchor.x,s.anchor.z);
+   if(s.id!=='ferry'&&s.id!=='sardine')s.root.position.y=s.id==='panier'?this.world.surface(s.anchor.x,s.anchor.z)+1:s.id==='divers'?Math.max(s.roadHeight,this.world.ground(s.anchor.x,s.anchor.z)):s.type==='sunbathing'?s.anchor.y:this.world.ground(s.anchor.x,s.anchor.z);
    const height=s.root.position.y;
    landmarks.push({...s,x:s.anchor.x,z:s.anchor.z,center:[s.anchor.x,s.anchor.z],height:height+6,ground:this.world.ground(s.anchor.x,s.anchor.z)});
    if(s.id==='ferry'){

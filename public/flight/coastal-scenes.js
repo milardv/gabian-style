@@ -42,11 +42,11 @@ export function updateDivers(life,s,time,near){
  return cheering;
 }
 // Adult beachgoers in a relaxed, ordinary sunbathing pose.
-function sunbather(life,parent,index){
+function sunbather(life,parent,index,{x=7,z=-.5}={}){
  const root=new T.Group();root.userData={role:'adult-sunbather',age:28+index*7};
- root.position.set(7,.25,-.5);root.rotation.y=(index-1)*.18;parent.add(root);
+ root.position.set(x,.25,z);root.rotation.y=(index-1)*.18;parent.add(root);
  const skin=[0xe2b895,0xb87d55,0xd09b75][index],bottom=[0x164bc1,0xee550f,0x43b9ef][index];
- life.mesh(parent,'box',[0xffe797,0xfff8e5,0x89d2f5][index],[1.8,.04,2.8],[7,.1,-.5]).rotation.y=root.rotation.y;
+ life.mesh(parent,'box',[0xffe797,0xfff8e5,0x89d2f5][index],[1.8,.04,2.8],[x,.1,z]).rotation.y=root.rotation.y;
  life.mesh(root,'sphere',skin,[.30,.16,.48],[0,0,-.08]);
  for(const side of [-1,1]){
   life.mesh(root,'sphere',skin,[.12,.10,.14],[side*.13,.13,-.28]);
@@ -57,8 +57,8 @@ function sunbather(life,parent,index){
  life.mesh(root,'sphere',skin,[.22,.21,.23],[0,.06,-.73]);
  life.mesh(root,'sphere',[0x78523c,0x34302d,0xbaa16b][index],[.23,.15,.18],[0,.02,-.87]);
  life.mesh(root,'box',0x23394a,[.34,.04,.10],[0,.27,-.74]);
- life.mesh(parent,'sphere',0xe8c587,[.4,.07,.4],[7.7,.18,-1.3]);
- life.mesh(parent,'canopy',0xe8c587,[.24,.22,.24],[7.7,.27,-1.3]);
+ life.mesh(parent,'sphere',0xe8c587,[.4,.07,.4],[x+.7,.18,z-.8]);
+ life.mesh(parent,'canopy',0xe8c587,[.24,.22,.24],[x+.7,.27,z-.8]);
  return root;
 }
 export function buildBeach(life,s){
@@ -91,4 +91,22 @@ export function updateBeach(life,s,time,wind){
   for(let i=0;i<grill.sausages.length;i++)grill.sausages[i].rotation.x=life.reducedMotion?0:Math.sin(time*.5+grill.family+i*.3)*.25;
  }
  s.cooks.forEach((cook,i)=>{cook.arms[0].rotation.x=-1.1+(life.reducedMotion?0:Math.sin(time*.8+i)*.25);cook.arms[1].rotation.z=.15;});
+}
+
+// Bake static figures into a single vertex-coloured mesh per coastal spot.
+// The shore can host many small scenes without multiplying draw calls per body part.
+export function buildSunSpot(life,s,patches){
+ s.sunbathers=[];
+ patches.forEach((patch,i)=>{
+  const parent=new T.Group();parent.position.set(patch.x-s.anchor.x,patch.y-s.anchor.y,patch.z-s.anchor.z);s.root.add(parent);
+  s.sunbathers.push(sunbather(life,parent,i%3,{x:0,z:0}));
+ });
+ s.root.updateMatrixWorld(true);
+ const inverse=s.root.matrixWorld.clone().invert(),positions=[],normals=[],colors=[];
+ s.root.traverse(mesh=>{if(!mesh.isMesh)return;
+  const matrix=new T.Matrix4().multiplyMatrices(inverse,mesh.matrixWorld),normalMatrix=new T.Matrix3().getNormalMatrix(matrix),geometry=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone(),p=geometry.attributes.position,n=geometry.attributes.normal,vector=new T.Vector3(),normal=new T.Vector3(),color=mesh.material.color;
+  for(let i=0;i<p.count;i++){vector.fromBufferAttribute(p,i).applyMatrix4(matrix);positions.push(...vector.toArray());normal.fromBufferAttribute(n,i).applyNormalMatrix(normalMatrix);normals.push(...normal.toArray());colors.push(color.r,color.g,color.b);}geometry.dispose();
+ });
+ const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('normal',new T.Float32BufferAttribute(normals,3));geometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));geometry.computeBoundingSphere();
+ s.root.clear();s.sunbathers=s.sunbathers.map(root=>({...root.userData}));s.root.add(new T.Mesh(geometry,life.sunSpotMaterial??=new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide})));
 }

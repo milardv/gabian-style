@@ -1,4 +1,5 @@
 import {toLocal} from './geo.js';
+import {COASTAL_SPOTS} from './coastal-spots.js';
 export const LIFE_SCENES=[
  {id:'ferry',name:'Le ferry-boat du Vieux-Port',kind:'Scène de vie',coordinates:[5.37315,43.29465],radius:230,reply:'Oh ! Le capitaine et les passagers te saluent.'},
  {id:'petanque',name:'La partie de pétanque à Borély',kind:'Scène de vie',coordinates:[5.3793,43.2578],radius:150,reply:'Oh, le gabian ! Tu touches pas au cochonnet !'},
@@ -10,7 +11,7 @@ export const LIFE_SCENES=[
  {id:'divers',name:'Les plongeurs de la Corniche',kind:'Scène de vie',coordinates:[5.35047505,43.28537954],waterCoordinates:[5.35020,43.28552],roadHeight:15.5,radius:190,reply:'Oh fan, quel salto ! Les copains applaudissent.'},
  {id:'prado',name:'Les merguez du Prado',kind:'Scène de vie',coordinates:[5.3732,43.2603],radius:240,reply:'Ça grille au Prado ! Les familles te font signe.'},
  {id:'prado-sud',name:'Le barbecue des familles à la plage',kind:'Scène de vie',coordinates:[5.37485,43.25645],radius:230,reply:'À table ! Les merguez sont prêtes.'}
-].map(item=>{const [x,z]=toLocal(...item.coordinates);return{...item,x,z,center:[x,z],visitKey:`marseille-life:${item.id}`};});
+].concat(COASTAL_SPOTS.map(spot=>({...spot,id:`sun-${spot.id}`,type:'sunbathing',name:`Bronzette · ${spot.name}`,kind:'Scène de vie',radius:120,reply:'On profite du soleil ! Les habituées te saluent.'}))).map(item=>{const [x,z]=toLocal(...item.coordinates);return{...item,x,z,center:[x,z],visitKey:`marseille-life:${item.id}`};});
 export function ferryProgress(time){const cycle=((time%160)+160)%160;return cycle<15?0:cycle<75?(cycle-15)/60:cycle<95?1:cycle<155?1-(cycle-95)/60:0;}
 export function sardineActive(time,delay){return time>=delay&&(time-delay)%480<85;}
 export function nearbyReaction(position,scenes=LIFE_SCENES,sardine=false){return scenes.filter(item=>item.id!=='sardine'||sardine).map(item=>({...item,distance:Math.hypot(item.x-position.x,item.z-position.z)})).filter(item=>item.distance<=item.radius&&Math.abs(position.altitude-(item.height??item.ground??0))<200).sort((a,b)=>a.distance-b.distance)[0]||null;}
