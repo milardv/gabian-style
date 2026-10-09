@@ -1,6 +1,9 @@
 import {pwaAssets,renderWorker} from './lib/pwa-assets.js';
 import { createServer } from 'node:http';
-import {gzipSync} from 'node:zlib';
+import {acceptsGzip} from './lib/http-encoding.js';
+import {coastModel} from './lib/coast-store.js';
+import {COAST_DIR} from './public/flight/coast-config.js';
+import {gzipSync,gunzipSync} from 'node:zlib';
 import { readFileSync, existsSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +19,7 @@ const userAgent = 'GabianStyle/0.1 (local Marseille game)';
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.png': 'image/png', '.glb':'model/gltf-binary', '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json; charset=utf-8' };
 
 function json(response, status, body) {
-  const raw=Buffer.from(JSON.stringify(body)),compressed=raw.length>1024&&/\bgzip\b(?!\s*;\s*q=0(?:\D|$))/i.test(response.req?.headers['accept-encoding']||'');
+  const raw=Buffer.from(JSON.stringify(body)),compressed=raw.length>1024&&acceptsGzip(response.req?.headers['accept-encoding']);
   const bytes=compressed?gzipSync(raw,{level:4}):raw;
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff','Vary':'Accept-Encoding','Content-Length':bytes.length,...(compressed?{'Content-Encoding':'gzip'}:{}) });
   response.end(bytes);
@@ -74,10 +77,16 @@ createServer(async (request, response) => {
       return response.end(image);
     }
     if(url.searchParams.has('build')&&url.searchParams.get('build')!==pwa.version)return fail(response,409,'Version remplacée ; réessayez.');
+    if(url.pathname.startsWith(COAST_DIR)&&url.pathname.endsWith('.glb')){
+      const bytes=await coastModel(url.pathname.slice(COAST_DIR.length));if(!bytes)return fail(response,404,'Modèle introuvable.');
+      const compressed=acceptsGzip(request.headers['accept-encoding']);
+      response.writeHead(200,{'Content-Type':'model/gltf-binary','Cache-Control':'public, max-age=86400','Vary':'Accept-Encoding','X-Content-Type-Options':'nosniff','X-Gabian-Version':pwa.version,...(compressed?{'Content-Encoding':'gzip'}:{})});
+      return response.end(compressed?bytes:gunzipSync(bytes));
+    }
     const target = ['/', '/marseille', '/marseille/'].includes(url.pathname) ? '/index.html' : url.pathname;
     const path = normalize(join(publicDir, target));
     if (!path.startsWith(publicDir + '/') || !existsSync(path)) return fail(response, 404, 'Page introuvable.');
-    const compressed=/\bgzip\b(?!\s*;\s*q=0(?:\D|$))/i.test(request.headers['accept-encoding']||'')&&existsSync(path+'.gz');
+    const compressed=acceptsGzip(request.headers['accept-encoding'])&&existsSync(path+'.gz');
     response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff', 'X-Gabian-Version':pwa.version, 'Vary':'Accept-Encoding', ...(compressed?{'Content-Encoding':'gzip'}:{}), 'Cache-Control': ['.html','.js','.css','.webmanifest'].includes(extname(path)) ? 'no-cache' : 'public, max-age=86400' });
     response.end(readFileSync(path+(compressed?'.gz':'')));
   } catch (error) {

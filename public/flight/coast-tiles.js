@@ -7,7 +7,13 @@ export class CoastTiles {
  constructor(scene){
   this.scene=scene;this.tiles=new B.TilesRenderer(COAST_URL,scene);this.failed=false;this.bounds=[];
   this.tiles.errorTarget=10;this.tiles.downloadQueue.maxJobs=2;this.tiles.parseQueue.maxJobs=1;
-  this.tiles.lruCache.maxSize=40;this.tiles.lruCache.minSize=12;
+  this.tiles.lruCache.maxSize=160;this.tiles.lruCache.minSize=48;
+  this.range=1800;
+  this.tiles.registerPlugin({name:'LOCAL_STREAMING_AREA',calculateTileViewError:(tile,target)=>{
+   const b=tile.extras?.bounds,p=scene.activeCamera?.position;if(!b||!p)return false;
+   const distance=Math.hypot(Math.max(b[0]-p.x,0,p.x-b[2]),Math.max(b[1]-p.z,0,p.z-b[3]));
+   if(distance<=this.range)return false;target.inView=false;return true;
+  }});
   this.tiles.addEventListener('load-model',({scene:root,tile,url})=>{
    for(const mesh of root.getChildMeshes()){
     if(!mesh.material)continue;
@@ -31,6 +37,9 @@ export class CoastTiles {
  update(quality='balanced'){
   if(this.failed&&performance.now()>=this.retryAt){this.tiles.resetFailedTiles();this.failed=false;}
   this.tiles.errorTarget=quality==='mobile'?16:quality==='high'?6:10;
+  this.range=quality==='mobile'?1000:quality==='high'?2600:1800;
+  this.tiles.lruCache.maxSize=quality==='mobile'?96:quality==='high'?224:160;
+  this.tiles.lruCache.minSize=quality==='mobile'?32:48;
   this.tiles.update();
   this.bounds=[];
   for(const tile of this.tiles.visibleTiles){const root=tile.engineData.scene,meshes=root?.getChildMeshes().filter(mesh=>mesh.getTotalVertices()>0)||[];

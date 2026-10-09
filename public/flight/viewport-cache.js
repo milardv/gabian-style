@@ -17,9 +17,9 @@ export function viewportResources(camera,world,x,z,quality='balanced'){
  tiles.sort((a,b)=>a.d-b.d);
  const paths=['/api/marseille/boundary','/api/marseille/overview','/api/marseille/overview-imagery'];
  for(const tile of tiles){
-  paths.push(`/api/marseille/terrain/${tile.key}?v=${COAST_KEYS.has(tile.key)?COAST_TERRAIN_VERSION:5}`,`/api/marseille/imagery/${tile.key}?size=${world.imageSizeFor({terrain:{bounds:tile.bounds}})}&v=4`,`/api/marseille/buildings/${tile.key}`,`/api/marseille/roads/${tile.key}`);
+  paths.push(`/api/marseille/terrain/${tile.key}?v=${COAST_KEYS.has(tile.key)?COAST_TERRAIN_VERSION:5}`,`/api/marseille/imagery/${tile.key}?size=${world.imageSizeFor({terrain:{bounds:tile.bounds}})}&v=5`,`/api/marseille/buildings/${tile.key}`,`/api/marseille/roads/${tile.key}`);
  }
- for(const key of COAST_KEYS){if(!visible(localBounds(tileBounds(...key.split('/').map(Number)))))continue;
+ for(const {key} of tiles){if(!COAST_KEYS.has(key))continue;
   paths.push(...coastAssets(key));
  }
  return [...new Set(paths)];

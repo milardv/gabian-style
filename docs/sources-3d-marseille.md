@@ -2,7 +2,7 @@
 
 ## Résultat
 
-Une maquette texturée de Marseille est accessible chez Luciad/Hexagon, mais son service est limité aux tests et démonstrations. La piste ouverte vérifiée pour le jeu est le LiDAR IGN (sol et sursol), combiné aux orthophotos métropolitaines 2022 à 5 cm. Ces données nécessitent une préparation ; elles ne constituent pas une maquette photogrammétrique prête à brancher. La reconstruction ouverte a ensuite été intégrée dans `corniche-v2` : six tuiles, photos métropolitaines composites, MNT/MNS IGN et toitures dérivées. Les services Google et Airbus/Luciad restent exclus de la production.
+Une maquette texturée de Marseille est accessible chez Luciad/Hexagon, mais son service est limité aux tests et démonstrations. La piste ouverte vérifiée pour le jeu est le LiDAR IGN (sol et sursol), combiné aux orthophotos métropolitaines 2022 à 5 cm. Ces données nécessitent une préparation ; elles ne constituent pas une maquette photogrammétrique prête à brancher. La reconstruction ouverte a ensuite été intégrée dans `marseille-sud-v3` : 236 tuiles du Vieux-Port aux Calanques de Marseille, photos métropolitaines composites, MNT/MNS IGN et toitures dérivées. Les services Google et Airbus/Luciad restent exclus de la production.
 
 ## Maquette Airbus / Luciad
 
@@ -45,7 +45,7 @@ Une maquette texturée de Marseille est accessible chez Luciad/Hexagon, mais son
 
 ## Travail intégré et suite
 
-1. Intégré : Corniche–Malmousque, Maïre et secteur du départ Calanques, textures fines et MNT IGN.
+1. Intégré : toute la zone du Vieux-Port aux Calanques de Marseille, dont Prado, Goudes et Maïre, textures fines et MNT IGN.
 2. Intégré : toitures dérivées du MNS et des emprises BD TOPO. Les ponts et la végétation détaillée restent à traiter séparément.
 3. Les tests de couverture et les fichiers ont été préparés pour les deux tuiles de Maïre et la tuile du départ Calanques ; le reste des Calanques ne bénéficie pas encore de ce traitement.
 4. Pour une ville entièrement photogrammétrique avec façades photographiques : obtenir une licence de la maquette Airbus ou attendre/identifier une publication ouverte effective.

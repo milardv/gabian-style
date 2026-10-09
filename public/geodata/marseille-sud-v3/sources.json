@@ -1,0 +1,34 @@
+{
+  "coverage": {
+    "name": "Vieux-Port aux Calanques de Marseille",
+    "tiles": 236,
+    "bounds": [
+      5.32,
+      43.16,
+      5.57,
+      43.302
+    ]
+  },
+  "prepared_at": "2026-10-09T17:05:21.952Z",
+  "derived": true,
+  "terrain": {
+    "publisher": "IGN",
+    "source": "https://data.geopf.fr/wms-r",
+    "products": [
+      "LiDAR HD MNT 50 cm",
+      "LiDAR HD MNS 50 cm"
+    ],
+    "license": "Licence Ouverte 2.0"
+  },
+  "imagery": {
+    "publisher": "Métropole Aix-Marseille Provence",
+    "capture": "2022-04-14 / 2022-07-04",
+    "updated_at": "2023-11-23T10:54:25+00:00",
+    "source": "https://data.ampmetropole.fr/explore/assets/fr-orthophoto-mamp-2022/",
+    "license": "Licence Ouverte 2.0 (Etalab)",
+    "source_resolution_m": 0.05,
+    "output_resolution_m": 0.43462505725475087,
+    "fallback": "IGN BD ORTHO pour les zones transparentes"
+  },
+  "notes": "Reconstruction dérivée ; façades générées, aucun bâtiment photogrammétrique."
+}

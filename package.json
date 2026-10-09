@@ -11,7 +11,8 @@
     "sync:marseille": "node scripts/sync-marseille.js",
     "test": "node --test",
     "build:babylon": "node scripts/build-babylon.js",
-    "build:coast": "node scripts/build-coast.js"
+    "build:coast": "node scripts/build-coast.js",
+    "check:coast": "node scripts/check-coast.js"
   },
   "devDependencies": {
     "@babylonjs/core": "9.30.0",
