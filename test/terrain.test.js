@@ -83,3 +83,10 @@ test('a failed request does not poison the elevation queue', async () => {
   await assert.rejects(request({}), /network/);
   assert.deepEqual(await request({}), {elevations: [143]});
 });
+
+test('IGN coastal no-data blends do not block Marseille overview or flatten valid heights', async () => {
+  const samples=[-57151.07,-30092.92,-74999.25,-24999.75,-38553.8,-87499.12,-49999.5,-12499.88,143.27];
+  const grid=await elevationGrid([0,0,1,1],3,async()=>({elevations:samples}));
+  assert.deepEqual(grid.heights,[0,0,0,0,0,0,0,0,143.27]);
+  for(const invalid of [-100000,NaN,Infinity,'-74999.25',null])await assert.rejects(elevationGrid([0,0,1,1],2,async()=>({elevations:[0,invalid,0,0]})),/invalide/);
+});
