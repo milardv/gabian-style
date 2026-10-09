@@ -99,3 +99,11 @@ test('Worker : deux téléchargements simultanés d’une tuile partagent la mê
  const a=f.run('fetch',{request}),b=f.run('fetch',{request});await new Promise(resolve=>setImmediate(resolve));release();const results=await Promise.all([a,b]);
  assert.equal(downloads,1);assert.equal(await results[0].text(),await results[1].text());
 });
+
+test('Worker : the expanded Calanques tileset, external subtree, model and photograph survive a network loss',async()=>{
+ const f=await workerFixture(),resources=[['tileset.json','application/json'],['16877-12014.tiles.json','application/json'],['16877-12014-q0-1.glb','model/gltf-binary'],['16877-12014-q0.jpg','image/jpeg']];
+ for(const [name,type]of resources){f.network(async()=>new Response('saved-'+name,{headers:{'Content-Type':type}}));await f.run('fetch',{request:f.request('/geodata/marseille-sud-v3/'+name)});}
+ const calls=f.calls;f.network(async()=>{throw new TypeError('Failed to fetch');});
+ for(const [name]of resources)assert.equal(await(await f.run('fetch',{request:f.request('/geodata/marseille-sud-v3/'+name)})).text(),'saved-'+name);
+ assert.equal(f.calls,calls);assert.equal((await f.stores.get('gabian-map-v1').keys()).length,4);
+});

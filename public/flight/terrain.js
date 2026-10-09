@@ -2,22 +2,23 @@ import * as T from '../vendor/three/three.core.js';
 
 export function terrainGeometry(grid, stride = 1) {
   const { size: n, bounds: [w, north, e, south], heights } = grid;
-  const samples = [], positions = [], uv = [], indices = [];
+  const samples = [];
   for (let i = 0; i < n - 1; i += stride) samples.push(i);
   samples.push(n - 1); // Keep the shore/tile boundary even for non-divisible strides.
-  const m = samples.length;
+  const m = samples.length,positions=new Float32Array(m*m*3),uv=new Float32Array(m*m*2),indices=new (m*m>65535?Uint32Array:Uint16Array)((m-1)*(m-1)*6);
+  let vertex=0,face=0;
   for (const j of samples) for (const i of samples) {
-    positions.push(w + (e - w) * i / (n - 1), heights[j * n + i], north + (south - north) * j / (n - 1));
-    uv.push(i / (n - 1), 1 - j / (n - 1));
+    positions[vertex*3]=w+(e-w)*i/(n-1);positions[vertex*3+1]=heights[j*n+i];positions[vertex*3+2]=north+(south-north)*j/(n-1);
+    uv[vertex*2]=i/(n-1);uv[vertex*2+1]=1-j/(n-1);vertex++;
   }
   for (let j = 0; j < m - 1; j++) for (let i = 0; i < m - 1; i++) {
     const a = j * m + i;
-    indices.push(a, a + m, a + 1, a + 1, a + m, a + m + 1);
+    indices[face++]=a;indices[face++]=a+m;indices[face++]=a+1;indices[face++]=a+1;indices[face++]=a+m;indices[face++]=a+m+1;
   }
   const geometry = new T.BufferGeometry();
-  geometry.setAttribute('position', new T.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
-  geometry.setIndex(indices);
+  geometry.setAttribute('position', new T.BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new T.BufferAttribute(uv, 2));
+  geometry.setIndex(new T.BufferAttribute(indices,1));
   geometry.computeVertexNormals();
   return geometry;
 }

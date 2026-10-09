@@ -3,7 +3,7 @@ import {toGeo,toLocal,tileAt,tileBounds,localBounds,inPolygons,sampleGrid} from 
 import {terrainGeometry,terrainLOD,overviewMask} from './terrain.js';
 import {containsPlayArea,MARSEILLE_WATER_ZONE} from './play-area.js';
 import {COAST_KEYS,COAST_TERRAIN_VERSION} from './coast-config.js';
-const get = async path => { const r=await fetch(path); if(!r.ok) throw Error(`Cartographie indisponible (${r.status})`); return r.json(); };
+import {mapJSON as get} from './map-request.js';
 function roadGeometry(roads,terrain){const positions=[],indices=[];for(const road of roads)for(let i=1;i<road.points.length;i++){const a=road.points[i-1],b=road.points[i],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz);if(length<.4)continue;const nx=-dz/length*road.width/2,nz=dx/length*road.width/2,ya=(a[1]??sampleGrid(terrain,a[0],a[2]))+.22,yb=(b[1]??sampleGrid(terrain,b[0],b[2]))+.22,k=positions.length/3;positions.push(a[0]+nx,ya,a[2]+nz,a[0]-nx,ya,a[2]-nz,b[0]+nx,yb,b[2]+nz,b[0]-nx,yb,b[2]-nz);indices.push(k,k+2,k+1,k+1,k+2,k+3);}const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();return g;}
 function facadeTexture(){
  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;const c=canvas.getContext('2d');
