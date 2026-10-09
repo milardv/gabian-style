@@ -17,10 +17,10 @@ self.addEventListener('install',event=>{
 self.addEventListener('activate',event=>{
  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>(key.startsWith('gabian-shell-')&&key!==SHELL)||key.startsWith('gabian-offline-')).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
 });
-function mapResource(path){return /^\/api\/marseille\/(boundary|overview|overview-imagery)$/.test(path)||/^\/api\/marseille\/(terrain|buildings|roads|imagery)\/\d{1,5}\/\d{1,5}$/.test(path);}
+function mapResource(path){return /^\/geodata\/corniche-v\d+\/[\w-]+\.(json|glb|jpg)$/.test(path)||/^\/api\/marseille\/(boundary|overview|overview-imagery)$/.test(path)||/^\/api\/marseille\/(terrain|buildings|roads|imagery)\/\d{1,5}\/\d{1,5}$/.test(path);}
 function download(request,key,store){
  if(!inFlight.has(key)){
-  const pending=fetch(request).then(async response=>{const type=response.headers.get('Content-Type')||'',image=/imagery/.test(new URL(request.url).pathname);if(response.ok&&store&&(image?type.startsWith('image/'):type.includes('application/json')))await safe(store.put(key,response));return response;}).finally(()=>inFlight.delete(key));
+  const pending=fetch(request).then(async response=>{const type=response.headers.get('Content-Type')||'',path=new URL(request.url).pathname,image=/imagery|\.jpg$/.test(path),binary=/\.glb$/.test(path);if(response.ok&&store&&(binary?type.includes('model/gltf-binary'):image?type.startsWith('image/'):type.includes('application/json')))await safe(store.put(key,response));return response;}).finally(()=>inFlight.delete(key));
   inFlight.set(key,pending);
  }
  return inFlight.get(key).then(response=>response.clone());

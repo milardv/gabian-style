@@ -70,6 +70,14 @@ test('Worker : visite suivante depuis le cache, aucune requête sur une zone fra
  f.network(()=>{throw Error('offline');});assert.equal(await(await f.run('fetch',{request})).text(),'live-data');assert.equal(f.calls,1);
  const page=await f.run('fetch',{request:f.request('/','navigate')});assert.equal(await page.text(),'cached-game');
 });
+test('Worker : tuiles 3D et orthophotos du pilote restent disponibles hors ligne',async()=>{
+ const f=await workerFixture();
+ const resources=[['tileset.json','application/json'],['16871-12005-1.glb','model/gltf-binary'],['16871-12005.jpg','image/jpeg']];
+ for(const [name,type]of resources){f.network(async()=>new Response('tile-'+name,{headers:{'Content-Type':type}}));await f.run('fetch',{request:f.request('/geodata/corniche-v1/'+name)});}
+ f.network(async()=>{throw Error('offline');});
+ for(const [name]of resources)assert.equal(await(await f.run('fetch',{request:f.request('/geodata/corniche-v1/'+name)})).text(),'tile-'+name);
+ assert.equal((await f.stores.get('gabian-map-v1').keys()).length,3);
+});
 test('Worker : garder la carte aux mises à jour et ne pas cacher les missions aléatoires',async()=>{
  const f=await workerFixture();await f.run('activate');assert.deepEqual(f.deleted,['gabian-offline-v1','gabian-shell-old']);
  assert.equal(await f.run('fetch',{request:f.request('/api/marseille/mission')}),undefined);

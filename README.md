@@ -79,6 +79,8 @@ En scooter, maintenir `Maj` en tournant déclenche un dérapage assisté à part
 
 ## Internet et téléphone
 
+Le [pilote Corniche–Malmousque](docs/rendu-3d.md) utilise désormais du relief LiDAR IGN et des 3D Tiles natives Babylon, chargées progressivement et conservées dans le cache mobile.
+
 Voir [le guide de déploiement](docs/deploiement.md) : démo Render gratuite avec HTTPS, passage possible à un disque persistant payant, ou conteneur Docker sur votre serveur. `HOST=0.0.0.0` permet l’accès réseau ; `/healthz` contrôle le serveur sans appeler l’IGN.
 
 Sur écran tactile, le mode « Mobile · léger » limite le rendu et les textures, replie les réglages et laisse les commandes principales accessibles. WebGL 2 et une connexion restent nécessaires ; la fluidité sur de vrais téléphones reste à vérifier.

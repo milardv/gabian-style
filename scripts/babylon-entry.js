@@ -19,5 +19,6 @@ export {MaterialPluginBase} from '@babylonjs/core/Materials/materialPluginBase.j
 export {Texture} from '@babylonjs/core/Materials/Textures/texture.js';
 export {DynamicTexture} from '@babylonjs/core/Materials/Textures/dynamicTexture.js';
 export {Constants} from '@babylonjs/core/Engines/constants.js';
+export {TilesRenderer} from '3d-tiles-renderer/babylonjs';
 import '@babylonjs/core/Meshes/thinInstanceMesh.js';
 import '@babylonjs/core/Rendering/boundingBoxRenderer.js';

@@ -10,10 +10,14 @@
     "start": "node server.js",
     "sync:marseille": "node scripts/sync-marseille.js",
     "test": "node --test",
-    "build:babylon": "node scripts/build-babylon.js"
+    "build:babylon": "node scripts/build-babylon.js",
+    "build:coast": "node scripts/build-coast.js"
   },
   "devDependencies": {
     "@babylonjs/core": "9.30.0",
-    "esbuild": "0.28.2"
+    "@babylonjs/loaders": "9.30.0",
+    "3d-tiles-renderer": "0.5.3",
+    "esbuild": "0.28.2",
+    "geotiff": "3.0.5"
   }
 }

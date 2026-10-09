@@ -1,4 +1,5 @@
 import * as B from '../vendor/babylon/babylon.module.js';
+import {CoastTiles} from './coast-tiles.js';
 
 // Existing procedural builders remain CPU-only. Babylon owns the scene, GPU
 // buffers, materials, instancing and render loop. Nothing is serialized per frame.
@@ -9,9 +10,9 @@ const color=(target,source,factor=1)=>target.set(gamma(source.r)*factor,gamma(so
 const changed=(a,b)=>!a||a.some((value,i)=>value!==b[i]);
 
 class TerrainMask extends B.MaterialPluginBase {
- constructor(material,mask){super(material,'GabianTerrainMask',200,{},true,true);this.mask=mask;this.bounds=new Float32Array(128*4);}
+ constructor(material,mask,coast){super(material,'GabianTerrainMask',200,{},true,true);this.mask=mask;this.coast=coast;this.bounds=new Float32Array(128*4);}
  getUniforms(){return{ubo:[{name:'terrainCount',size:1,type:'float'},{name:'terrainBounds',size:4,type:'vec4',arraySize:128}],fragment:'uniform float terrainCount;\nuniform vec4 terrainBounds[128];'};}
- bindForSubMesh(buffer){const count=this.mask.terrainCount.value;for(let i=0;i<count;i++)this.mask.terrainBounds.value[i].toArray(this.bounds,i*4);buffer.updateFloat('terrainCount',count);buffer.updateFloatArray('terrainBounds',this.bounds);}
+ bindForSubMesh(buffer){const original=this.mask?.terrainCount.value||0,extra=this.coast?.bounds||[],count=Math.min(128,original+extra.length);for(let i=0;i<original;i++)this.mask.terrainBounds.value[i].toArray(this.bounds,i*4);for(let i=original;i<count;i++)this.bounds.set(extra[i-original],i*4);buffer.updateFloat('terrainCount',count);buffer.updateFloatArray('terrainBounds',this.bounds);}
  getCustomCode(kind){return kind==='vertex'?{CUSTOM_VERTEX_DEFINITIONS:'varying vec2 overviewPosition;',CUSTOM_VERTEX_MAIN_END:'overviewPosition = position.xz;'}:{CUSTOM_FRAGMENT_DEFINITIONS:'varying vec2 overviewPosition;',CUSTOM_FRAGMENT_MAIN_BEGIN:`for (int i=0; i<128; i++) {
  if (float(i)>=terrainCount) break;
  vec4 b=terrainBounds[i];
@@ -38,6 +39,7 @@ export class BabylonRenderer {
   this.spriteGeometry.setVerticesData('position',[-.5,-.5,0,.5,-.5,0,.5,.5,0,-.5,.5,0]);
   this.spriteGeometry.setVerticesData('uv',[0,0,1,0,1,1,0,1]);this.spriteGeometry.setIndices([0,1,2,0,2,3]);
   this.spritePosition=new B.Vector3();this.spriteScale=new B.Vector3();this.spriteRotation=new B.Quaternion();this.spriteMatrix=B.Matrix.Identity();
+  this.coast=canvas?new CoastTiles(this.scene):null;
   if(canvas)canvas.dataset.engine='babylonjs';
  }
  setPixelRatio(value){this.pixelRatio=value;this.engine.setHardwareScalingLevel(1/value);}
@@ -67,7 +69,7 @@ export class BabylonRenderer {
    const native=new B.StandardMaterial(`material-${source.id}`,this.scene);
    native.maxSimultaneousLights=4;
    native.sideOrientation=B.Material.CounterClockWiseSideOrientation;
-   if(source.userData?.terrainMask)new TerrainMask(native,source.userData.terrainMask);
+   if(source.userData?.terrainMask||source.userData?.coastalTerrain)new TerrainMask(native,source.userData.terrainMask,this.coast);
    record={native};this.materials.set(source,record);
    source.addEventListener('dispose',()=>{native.dispose(false,false);this.materials.delete(source);});
   }
@@ -188,6 +190,6 @@ export class BabylonRenderer {
   const usedTexture=new Set();for(const source of usedMaterial)if(source.map)usedTexture.add(source.map);
   for(const [source,record]of this.textures)if(!usedTexture.has(source)){record.native.dispose();this.textures.delete(source);}
  }
- render(sourceScene,sourceCamera){this.sync(sourceScene,sourceCamera);this.scene.render();}
- dispose(){this.setAnimationLoop(null);this.scene.dispose();this.engine.dispose();this.objects.clear();this.geometries.clear();this.materials.clear();this.textures.clear();}
+ render(sourceScene,sourceCamera){this.sync(sourceScene,sourceCamera);this.coast?.update(this.quality);this.scene.render();}
+ dispose(){this.setAnimationLoop(null);this.coast?.dispose();this.scene.dispose();this.engine.dispose();this.objects.clear();this.geometries.clear();this.materials.clear();this.textures.clear();}
 }
