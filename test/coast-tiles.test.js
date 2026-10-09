@@ -52,3 +52,12 @@ test('photographic replacement materials belong to the tile container for GPU cl
   assert.equal(mesh.renderingGroupId,1);assert.deepEqual(container.materials,[mesh.material]);assert.ok(!scene.materials.includes(old));
  }finally{coast.dispose();scene.dispose();engine.dispose();}
 });
+test('glTF sRGB photos are reloaded in gamma space for the photographic StandardMaterial',()=>{
+ const engine=new B.NullEngine(),scene=new B.Scene(engine);scene.useRightHandedSystem=true;const coast=new CoastTiles(scene),mesh=new B.Mesh('photo',scene),old=new B.StandardMaterial('original',scene);
+ const original=new B.Texture(null,scene,{useSRGBBuffer:true,gammaSpace:false});old.albedoTexture=original;mesh.material=old;
+ const container={materials:[old],textures:[original]},tile={engineData:{container,metadata:{images:[{uri:'16871-12005.jpg'}]}}};
+ try{coast.tiles.dispatchEvent({type:'load-model',scene:{getChildMeshes:()=>[mesh]},tile,url:'https://gabian.example/geodata/corniche-v1/16871-12005-1.glb'});
+  const texture=mesh.material.diffuseTexture;assert.notEqual(texture,original);assert.equal(texture.gammaSpace,true);assert.equal(texture._useSRGBBuffer,false);assert.equal(texture.invertY,false);
+  assert.equal(texture.url,'https://gabian.example/geodata/corniche-v1/16871-12005.jpg');assert.deepEqual(container.textures,[texture]);assert.equal(mesh.material.twoSidedLighting,true);
+ }finally{coast.dispose();scene.dispose();engine.dispose();}
+});

@@ -8,14 +8,19 @@ export class CoastTiles {
   this.scene=scene;this.tiles=new B.TilesRenderer(COAST_URL,scene);this.failed=false;this.bounds=[];
   this.tiles.errorTarget=10;this.tiles.downloadQueue.maxJobs=2;this.tiles.parseQueue.maxJobs=1;
   this.tiles.lruCache.maxSize=24;this.tiles.lruCache.minSize=12;
-  this.tiles.addEventListener('load-model',({scene:root,tile})=>{
+  this.tiles.addEventListener('load-model',({scene:root,tile,url})=>{
    for(const mesh of root.getChildMeshes()){
     if(!mesh.material)continue;
     const old=mesh.material,material=new B.StandardMaterial('coast-orthophoto',scene);
-    material.diffuseTexture=old.albedoTexture;material.diffuseColor.set(1,1,1);material.specularColor.set(0,0,0);material.backFaceCulling=false;material.maxSimultaneousLights=4;
+    const original=old.albedoTexture,container=tile.engineData.container;
+    // glTF's PBR loader uses hardware sRGB decoding. StandardMaterial expects
+    // gamma-space photos instead: reusing that buffer darkens them a second time.
+    const image=tile.engineData.metadata?.images?.[0]?.uri;
+    material.diffuseTexture=image&&url?new B.Texture(new URL(image,url).href,scene,{invertY:false,useSRGBBuffer:false,gammaSpace:true,samplingMode:B.Texture.TRILINEAR_SAMPLINGMODE}):original;
+    material.diffuseColor.set(1,1,1);material.specularColor.set(0,0,0);material.backFaceCulling=false;material.twoSidedLighting=true;material.maxSimultaneousLights=4;
     mesh.material=material;mesh.renderingGroupId=1;mesh.isPickable=false;
-    const container=tile.engineData.container;
     container.materials=container.materials.filter(item=>item!==old);container.materials.push(material);
+    if(material.diffuseTexture!==original){container.textures=container.textures.filter(item=>item!==original);container.textures.push(material.diffuseTexture);original?.dispose();}
     old.dispose(false,false);
    }
   });
