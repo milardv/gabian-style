@@ -1,6 +1,6 @@
 import {angleDelta,WIND_DIRECTION} from './sailboat-physics.js';
 // A little clearance around the entire hull, plus room to leave the obstacle.
-function clearHull(x,z,heading,environment){
+export function clearHull(x,z,heading,environment){
  for(const lateral of [-1.5,0,1.5])for(const forward of [-3.5,-2,0,2,4,6]){
   const px=x+Math.sin(heading)*forward+Math.cos(heading)*lateral,pz=z-Math.cos(heading)*forward+Math.sin(heading)*lateral;
   if(environment.contains?.(px,pz)===false||environment.isWater(px,pz)!==true)return false;
