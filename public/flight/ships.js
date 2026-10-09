@@ -1,4 +1,4 @@
-import * as T from '../vendor/three/three.module.js';
+import * as T from '../vendor/three/three.core.js';
 import {toLocal} from './geo.js';
 const box=new T.BoxGeometry(1,1,1);
 function cargoShip(scene,{position,heading=0,scale=1,phase=0}){

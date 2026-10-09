@@ -1,4 +1,4 @@
-import * as T from '../vendor/three/three.module.js';
+import * as T from '../vendor/three/three.core.js';
 import {waveHeight} from './sailboat-physics.js';
 const box=new T.BoxGeometry(1,1,1);
 function sailGeometry(height,foot){

@@ -1,4 +1,4 @@
-import * as T from '../vendor/three/three.module.js';
+import * as T from '../vendor/three/three.core.js';
 import {angleDelta} from './sailboat-physics.js';
 import {damped} from './scooter-physics.js';
 export class SailboatCamera{

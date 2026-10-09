@@ -1,4 +1,4 @@
-import * as T from '../vendor/three/three.module.js';
+import * as T from '../vendor/three/three.core.js';
 const paint=new T.MeshStandardMaterial({color:0x252b2c,metalness:.68,roughness:.32});
 const graphite=new T.MeshStandardMaterial({color:0x42494a,metalness:.58,roughness:.38});
 const rubber=new T.MeshStandardMaterial({color:0x171a1b,roughness:.96});

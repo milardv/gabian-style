@@ -1,4 +1,4 @@
-import * as T from '../vendor/three/three.module.js';
+import * as T from '../vendor/three/three.core.js';
 const white = new T.MeshStandardMaterial({ color: '#f5f3e9', roughness: .8 });
 const grey = new T.MeshStandardMaterial({ color: '#aeb5b6', roughness: .85, side: T.DoubleSide });
 const black = new T.MeshStandardMaterial({ color: '#252c30', roughness: .9, side: T.DoubleSide });

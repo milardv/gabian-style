@@ -9,6 +9,11 @@
   "scripts": {
     "start": "node server.js",
     "sync:marseille": "node scripts/sync-marseille.js",
-    "test": "node --test"
+    "test": "node --test",
+    "build:babylon": "node scripts/build-babylon.js"
+  },
+  "devDependencies": {
+    "@babylonjs/core": "9.30.0",
+    "esbuild": "0.28.2"
   }
 }

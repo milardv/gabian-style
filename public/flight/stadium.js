@@ -1,4 +1,4 @@
-import * as T from '../vendor/three/three.module.js';
+import * as T from '../vendor/three/three.core.js';
 import {toLocal} from './geo.js';
 
 // An imaginary match, anchored to the real stadium. All particles are reused.

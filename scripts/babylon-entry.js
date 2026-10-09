@@ -1,0 +1,23 @@
+// Only the engine features used by the game; no inspector, editor or CDN.
+export {Engine} from '@babylonjs/core/Engines/engine.js';
+export {NullEngine} from '@babylonjs/core/Engines/nullEngine.js';
+export {Scene} from '@babylonjs/core/scene.js';
+export {Camera} from '@babylonjs/core/Cameras/camera.js';
+export {Mesh} from '@babylonjs/core/Meshes/mesh.js';
+export {Geometry} from '@babylonjs/core/Meshes/geometry.js';
+export {SubMesh} from '@babylonjs/core/Meshes/subMesh.js';
+export {VertexBuffer} from '@babylonjs/core/Buffers/buffer.js';
+export {Vector3,Quaternion,Matrix} from '@babylonjs/core/Maths/math.vector.js';
+export {Color3,Color4} from '@babylonjs/core/Maths/math.color.js';
+export {HemisphericLight} from '@babylonjs/core/Lights/hemisphericLight.js';
+export {DirectionalLight} from '@babylonjs/core/Lights/directionalLight.js';
+export {PointLight} from '@babylonjs/core/Lights/pointLight.js';
+export {StandardMaterial} from '@babylonjs/core/Materials/standardMaterial.js';
+export {ImageProcessingConfiguration} from '@babylonjs/core/Materials/imageProcessingConfiguration.js';
+export {Material} from '@babylonjs/core/Materials/material.js';
+export {MaterialPluginBase} from '@babylonjs/core/Materials/materialPluginBase.js';
+export {Texture} from '@babylonjs/core/Materials/Textures/texture.js';
+export {DynamicTexture} from '@babylonjs/core/Materials/Textures/dynamicTexture.js';
+export {Constants} from '@babylonjs/core/Engines/constants.js';
+import '@babylonjs/core/Meshes/thinInstanceMesh.js';
+import '@babylonjs/core/Rendering/boundingBoxRenderer.js';

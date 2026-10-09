@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as T from '../public/vendor/three/three.module.js';
+import * as T from '../public/vendor/three/three.core.js';
 import {createSailboat,stepSailboat,sailingPolar,waveHeight,interpolateSailboat,WIND_DIRECTION} from '../public/flight/sailboat-physics.js';
 import {createSailboatModel} from '../public/flight/sailboat.js';
 import {SailboatCamera} from '../public/flight/sailboat-camera.js';

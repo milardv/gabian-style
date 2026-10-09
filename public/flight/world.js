@@ -1,4 +1,4 @@
-import * as T from '../vendor/three/three.module.js';
+import * as T from '../vendor/three/three.core.js';
 import {toGeo,toLocal,tileAt,tileBounds,localBounds,inPolygons,sampleGrid} from './geo.js';
 import {terrainGeometry,terrainLOD,overviewMask} from './terrain.js';
 const get = async path => { const r=await fetch(path); if(!r.ok) throw Error(`Cartographie indisponible (${r.status})`); return r.json(); };

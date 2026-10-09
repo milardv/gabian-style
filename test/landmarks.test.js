@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as T from '../public/vendor/three/three.module.js';
+import * as T from '../public/vendor/three/three.core.js';
 import {LandmarkOverlay} from '../public/flight/landmarks.js';
 
 function setup(t){

@@ -1,4 +1,4 @@
-import * as T from '../vendor/three/three.module.js';
+import * as T from '../vendor/three/three.core.js';
 
 export function terrainGeometry(grid, stride = 1) {
   const { size: n, bounds: [w, north, e, south], heights } = grid;
@@ -35,6 +35,9 @@ export function terrainLOD(bounds, position, quality = 'balanced') {
 export function overviewMask(material) {
   const capacity = 128;
   const uniforms = { terrainCount: { value: 0 }, terrainBounds: { value: Array.from({ length: capacity }, () => new T.Vector4()) } };
+  // Shared with the Babylon material plugin; CPU geometry builders still use T.
+  material.userData ||= {};
+  material.userData.terrainMask = uniforms;
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = `varying vec2 overviewPosition;\n${shader.vertexShader}`.replace('#include <begin_vertex>', '#include <begin_vertex>\noverviewPosition = transformed.xz;');

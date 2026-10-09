@@ -13,10 +13,20 @@ npm start
 
 Ouvrir http://127.0.0.1:4174. Le port peut être changé avec `PORT`.
 
+## Reconstruire le moteur embarqué
+
+Le bundle est versionné : `npm start` et Render ne nécessitent aucune compilation. Pour mettre à jour ou reconstruire Babylon :
+
+```bash
+npm ci
+npm run build:babylon
+npm test
+```
+
 ## Jeu et données
 
 
-Ouvrir `/` (`/marseille` reste disponible). Vue 3D locale avec Three.js 0.186.1 embarqué sous licence MIT, sans installation npm ni clé API. Relief RGE ALTI, orthophotos et bâtiments BD TOPO IGN ; contour communal API Géo. Les hauteurs absentes sont approximées à partir des étages. Les façades et les toits sont des volumes simplifiés, pas une reconstruction photogrammétrique.
+Ouvrir `/` (`/marseille` reste disponible). Rendu 3D avec Babylon.js 9.30.0 embarqué sous licence Apache 2.0, sans CDN ni clé API. Le noyau Three.js 0.186.1 (MIT) sert encore à construire les géométries et à calculer les animations ; son moteur WebGL est supprimé. Babylon gère la scène graphique, les textures, les instances et le rendu. Les physiques, contrôles, données IGN et cache PWA sont conservés. Relief RGE ALTI, orthophotos et bâtiments BD TOPO IGN ; contour communal API Géo. Les hauteurs absentes sont approximées à partir des étages. Les façades et les toits sont des volumes simplifiés, pas une reconstruction photogrammétrique.
 
 - Flèches / ZQSD : monter, descendre et incliner pour tourner. `+` / `−` : vitesse ; `T` : poussée rapide (jusqu’à 220 km/h, vol non réaliste) ; `N` : nitro (environ 360 km/h, appuyer à nouveau pour couper) ; `P` : réduire/ouvrir le panneau de contrôles ; `C` : première personne ; `G` : plané ; `H` : masquer l’interface ; espace : pause ; `R` : repartir.
 - Souris par glissement, boutons tactiles et manette (stick gauche, gâchettes) disponibles.

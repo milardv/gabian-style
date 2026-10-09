@@ -1,4 +1,4 @@
-import * as T from '../vendor/three/three.module.js';
+import * as T from '../vendor/three/three.core.js';
 import {tileAt,toGeo} from './geo.js';
 import {buildDivers,updateDivers,buildBeach,updateBeach,buildSunSpot} from './coastal-scenes.js';
 import {sunPatches} from './coastal-placement.js';

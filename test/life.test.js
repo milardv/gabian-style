@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as T from '../public/vendor/three/three.module.js';
+import * as T from '../public/vendor/three/three.core.js';
 import {LIFE_SCENES,ferryProgress,sardineActive,nearbyReaction,coastalUpdraft} from '../public/flight/life-rules.js';
 import {MarseilleLife} from '../public/flight/marseille-life.js';
 import {Exploration} from '../public/flight/exploration.js';

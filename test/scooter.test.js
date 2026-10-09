@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as T from '../public/vendor/three/three.module.js';
+import * as T from '../public/vendor/three/three.core.js';
 import {createScooter,stepScooter,interpolateScooter,scooterSurface} from '../public/flight/scooter-physics.js';
 import {ScooterCamera} from '../public/flight/scooter-camera.js';
 import {createTmax} from '../public/flight/scooter.js';

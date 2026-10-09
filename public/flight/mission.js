@@ -1,4 +1,4 @@
-import * as T from '../vendor/three/three.module.js';
+import * as T from '../vendor/three/three.core.js';
 const parcelMat=new T.MeshStandardMaterial({color:0x9b6840,roughness:.93});
 const strapMat=new T.MeshStandardMaterial({color:0xdcc99a,roughness:.9});
 export function createParcel(){

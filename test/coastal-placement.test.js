@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as T from '../public/vendor/three/three.module.js';
+import * as T from '../public/vendor/three/three.core.js';
 import {COASTAL_SPOTS} from '../public/flight/coastal-spots.js';
 import {dryPatch,sunPatches} from '../public/flight/coastal-placement.js';
 import {MarseilleLife} from '../public/flight/marseille-life.js';

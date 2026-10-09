@@ -1,4 +1,4 @@
-import { ShapeUtils, Vector2 } from '../vendor/three/three.module.js';
+import { ShapeUtils, Vector2 } from '../vendor/three/three.core.js';
 import { sampleGrid } from './geo.js';
 export function buildGeometry(buildings, terrain, structures = []) {
   const sides = [], uvs = [], roofs = [], roofUvs = [], colors = [], domes = [], domeColors = [], towers = [], towerColors = [], statues = [], statueColors = [];
