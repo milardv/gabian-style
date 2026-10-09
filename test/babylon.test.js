@@ -75,3 +75,22 @@ test('loaded relief masks coarse terrain and streamed tiles release GPU allocati
  assert.equal(renderer.objects.size,0);assert.equal(renderer.geometries.size,0);assert.equal(renderer.materials.size,0);
  assert.equal(native.isDisposed(),true);
 });
+
+test('sea is excluded from both terrain layers after material updates; land and boat waves retain depth tests',async t=>{
+ const {terrainSeaMask}=await import('../public/flight/terrain.js');
+ const {renderer,scene,camera}=fixture();t.after(()=>renderer.dispose());
+ const material=terrainSeaMask(new T.MeshLambertMaterial({color:0xffffff}));overviewMask(material);
+ const mesh=new T.Mesh(terrainGeometry({size:2,bounds:[0,0,1,1],heights:[0,0,0,12]}),material);scene.add(mesh);
+ renderer.sync(scene,camera);const native=renderer.objects.get(mesh).native;
+ const plugin=native.material.pluginManager.getPlugin('GabianSeaFloorMask');
+ assert.match(plugin.getCustomCode('vertex').CUSTOM_VERTEX_MAIN_END,/position.y/);
+ assert.match(plugin.getCustomCode('fragment').CUSTOM_FRAGMENT_MAIN_BEGIN,/terrainElevation <= 0.01/);
+ assert.match(plugin.getCustomCode('fragment').CUSTOM_FRAGMENT_MAIN_BEGIN,/discard/);
+ assert.ok(native.material.pluginManager.getPlugin('GabianTerrainMask'));
+ material.vertexColors=true;material.needsUpdate=true;renderer.sync(scene,camera);
+ assert.equal(native.material.pluginManager.getPlugin('GabianSeaFloorMask'),plugin);
+ assert.deepEqual([...native.getVerticesData('position')].filter((_,i)=>i%3===1),[0,0,0,12]);
+ const waves=new T.Mesh(new T.PlaneGeometry(),new T.MeshPhongMaterial({transparent:true,opacity:.8,depthWrite:false}));scene.add(waves);renderer.sync(scene,camera);
+ assert.ok(!renderer.objects.get(waves).native.material.pluginManager?.getPlugin('GabianSeaFloorMask'));
+ assert.equal(renderer.objects.get(waves).native.material.depthFunction,0);
+});

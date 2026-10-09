@@ -1,5 +1,11 @@
 import * as T from '../vendor/three/three.core.js';
 
+export function terrainSeaMask(material) {
+  material.userData ||= {};
+  material.userData.seaTerrain = true;
+  return material;
+}
+
 export function terrainGeometry(grid, stride = 1) {
   const { size: n, bounds: [w, north, e, south], heights } = grid;
   const samples = [], positions = [], uv = [], indices = [];

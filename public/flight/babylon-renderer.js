@@ -8,6 +8,19 @@ const gamma=value=>value<=.0031308?value*12.92:1.055*Math.pow(value,1/2.4)-.055;
 const color=(target,source,factor=1)=>target.set(gamma(source.r)*factor,gamma(source.g)*factor,gamma(source.b)*factor);
 const changed=(a,b)=>!a||a.some((value,i)=>value!==b[i]);
 
+class SeaFloorMask extends B.MaterialPluginBase {
+ constructor(material){super(material,'GabianSeaFloorMask',190,{},true,true);}
+ getCustomCode(kind){return kind==='vertex'?{
+  CUSTOM_VERTEX_DEFINITIONS:'varying float terrainElevation;',
+  CUSTOM_VERTEX_MAIN_END:'terrainElevation = position.y;'
+ }:{
+  CUSTOM_FRAGMENT_DEFINITIONS:'varying float terrainElevation;',
+  // IGN sea/no-data points are zero. Leave the sea to its own surface, instead
+  // of overlapping orthophoto triangles and waves in the depth buffer.
+  CUSTOM_FRAGMENT_MAIN_BEGIN:'if (terrainElevation <= 0.01) discard;'
+ };}
+}
+
 class TerrainMask extends B.MaterialPluginBase {
  constructor(material,mask){super(material,'GabianTerrainMask',200,{},true,true);this.mask=mask;this.bounds=new Float32Array(128*4);}
  getUniforms(){return{ubo:[{name:'terrainCount',size:1,type:'float'},{name:'terrainBounds',size:4,type:'vec4',arraySize:128}],fragment:'uniform float terrainCount;\nuniform vec4 terrainBounds[128];'};}
@@ -64,6 +77,7 @@ export class BabylonRenderer {
    const native=new B.StandardMaterial(`material-${source.id}`,this.scene);
    native.maxSimultaneousLights=4;
    native.sideOrientation=B.Material.CounterClockWiseSideOrientation;
+   if(source.userData?.seaTerrain)new SeaFloorMask(native);
    if(source.userData?.terrainMask)new TerrainMask(native,source.userData.terrainMask);
    record={native};this.materials.set(source,record);
    source.addEventListener('dispose',()=>{native.dispose(false,false);this.materials.delete(source);});
