@@ -48,13 +48,13 @@ Les lieux IGN ont des étiquettes en overlay : police de taille fixe, sans occul
 
 ### Marseille populaire
 
-Sept scènes illustrées complètent les données IGN : ferry-boat et passagers au Vieux-Port, pétanque à Borély, étals à Noailles, apéro sur la Corniche, cortège bleu et blanc près du Vélodrome, linge et gabians au Panier, et sardine géante occasionnelle dans le port. Les scènes peuvent se décaler de quelques mètres pour éviter les bâtiments ; il ne s’agit pas d’une reconstitution documentaire.
+Dix scènes illustrées complètent les données IGN : ferry-boat et passagers au Vieux-Port, pétanque à Borély, étals à Noailles, apéro sur la Corniche, cortège bleu et blanc près du Vélodrome, linge et gabians au Panier, sardine géante occasionnelle dans le port, plongeurs acrobatiques et amis qui applaudissent sur la Corniche, et familles autour de barbecues aux merguez sur deux plages du Prado. Les scènes peuvent se décaler de quelques mètres pour éviter les bâtiments ; il ne s’agit pas d’une reconstitution documentaire.
 
 Elles apparaissent sur les cartes et dans les étiquettes, et leur première visite vaut 100 points dans le carnet. Les nouveaux départs Noailles, Borély et Le Panier permettent de les trouver facilement. `V` fait réagir les gens proches (saluts, réponses écrites, gabians qui approchent).
 
 « Ambiances sonores » dans les contrôles active des sons synthétiques selon la proximité : ferveur du stade, corne du ferry, boules, verres et oiseaux. Ils restent désactivés par défaut. Avec un mistral d’au moins 3 m/s, une ascendance côtière près de la Corniche aide le vol à basse altitude. La sardine apparaît pendant 85 secondes après un délai initial de 45 à 180 secondes, puis revient toutes les huit minutes de jeu.
 
-Les animations suivent la pause. Les décors sont construits à proximité, attendent les bâtiments IGN pour leur placement, partagent leurs géométries et utilisent des instances pour les foules. Les scènes éloignées sont masquées et réutilisées au retour.
+Les plongeurs prennent leur élan, effectuent un salto, entrent dans la mer avec éclaboussures puis nagent ; les amis les félicitent à chaque arrivée dans l’eau. Les familles du Prado réunissent adultes et enfants, parasols, serviettes, glacières, cuisiniers et fumée légère portée par le mistral. Les applaudissements synthétiques suivent l’option Ambiances sonores. Les animations suivent la pause et les nouvelles scènes réduisent les mouvements lorsque cette préférence est activée sur l’appareil. Les décors sont construits à proximité, attendent les bâtiments IGN pour leur placement, partagent leurs géométries et utilisent des instances pour les foules. Les scènes éloignées sont masquées et réutilisées au retour.
 
 ### Conduite du scooter
 

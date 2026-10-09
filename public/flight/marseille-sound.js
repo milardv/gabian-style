@@ -21,6 +21,8 @@ export class MarseilleSound {
  }
  phrase(id,intensity=1){
   if(id==='supporters'||id==='stadium')for(let i=0;i<4;i++)for(const interval of [1,1.25,1.5])this.tone((i<2?196:220)*interval,.55,.016*intensity,i*.45,'triangle');
+  else if(id==='divers')for(let i=0;i<5;i++)this.tone(650+i%2*210,.12,.025*intensity,i*.15,'triangle',430);
+  else if(id==='prado'||id==='prado-sud')for(let i=0;i<3;i++)this.tone(1400+i*170,.08,.012*intensity,i*.2,'triangle');
   else if(id==='petanque')this.tone(1900,.10,.06*intensity,0,'sine',900);
   else if(id==='ferry')for(const f of [146,220])this.tone(f,1.1,.04*intensity,0,'triangle');
   else if(id==='apero')for(let i=0;i<3;i++)this.tone(1100+i*230,.18,.028*intensity,i*.14);

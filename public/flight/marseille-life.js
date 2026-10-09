@@ -1,11 +1,12 @@
 import * as T from '../vendor/three/three.module.js';
 import {tileAt,toGeo} from './geo.js';
+import {buildDivers,updateDivers,buildBeach,updateBeach} from './coastal-scenes.js';
 import {LIFE_SCENES,ferryProgress,sardineActive,nearbyReaction,coastalUpdraft} from './life-rules.js';
 
 // Small illustrated scenes. Shared meshes/materials, lazy construction, no extra data service.
 export class MarseilleLife {
- constructor(scene,world,notice,{sardineDelay=45+Math.random()*135}={}){
-  this.scene=scene;this.world=world;this.notice=notice;this.time=0;this.delay=sardineDelay;this.lastSardine=false;this.cryUntil=0;this.replyAt=-10;this.current=null;
+ constructor(scene,world,notice,{sardineDelay=45+Math.random()*135,reducedMotion=false,celebrate=null}={}){
+  this.scene=scene;this.world=world;this.reducedMotion=reducedMotion;this.celebrate=celebrate;this.notice=notice;this.time=0;this.delay=sardineDelay;this.lastSardine=false;this.cryUntil=0;this.replyAt=-10;this.current=null;
   this.scenes=LIFE_SCENES.map(item=>({...item,root:null,animated:[],crowd:[],built:false}));
   this.geometries={box:new T.BoxGeometry(1,1,1),sphere:new T.SphereGeometry(1,10,7),pole:new T.CylinderGeometry(1,1,1,6),canopy:new T.ConeGeometry(1,1,8),body:new T.CapsuleGeometry(.42,1,3,5),head:new T.SphereGeometry(.32,6,5)};
   this.materials=new Map();this.dummy=new T.Object3D();this.world.lifeLandmarks=[];this.geometries.wing=new T.BufferGeometry().setFromPoints([new T.Vector3(0,0,-.12),new T.Vector3(.75,0,.12),new T.Vector3(.2,0,.25)]);this.geometries.wing.computeVertexNormals();
@@ -18,13 +19,14 @@ export class MarseilleLife {
   if(!s.crowd.length)return;
   s.bodies=new T.InstancedMesh(this.geometries.body,this.material(s.id==='supporters'?0x72caff:0xd79061),s.crowd.length);
   s.heads=new T.InstancedMesh(this.geometries.head,this.material(0xd9ad86),s.crowd.length);
-  s.arms=new T.InstancedMesh(this.geometries.pole,this.material(0xf5efe0),s.crowd.length);s.root.add(s.bodies,s.heads,s.arms);
+  s.arms=new T.InstancedMesh(this.geometries.pole,this.material(0xf5efe0),s.crowd.length*(s.id==='divers'?2:1));s.root.add(s.bodies,s.heads,s.arms);
   const blue=new T.Color(0x2498d9),cream=new T.Color(0xfff8e5),red=new T.Color(0xc76c43);
   for(let i=0;i<s.crowd.length;i++)s.bodies.setColorAt(i,s.crowd[i].blue?blue:i%3?cream:red);
   s.bodies.frustumCulled=s.heads.frustumCulled=s.arms.frustumCulled=false;
  }
  findGround(s){
   if(s.id==='ferry'||s.id==='sardine')return{x:s.x,z:s.z,y:1.8};
+  if(s.id==='divers')return{x:s.x,z:s.z,y:Math.max(s.roadHeight,this.world.ground(s.x,s.z))};
   if(s.id==='panier')return{x:s.x,z:s.z,y:this.world.surface(s.x,s.z)+1};
   // When IGN buildings have loaded, locate a clear patch near the intended square.
   for(let ring=0;ring<4;ring++)for(let i=0;i<(ring?12:1);i++){
@@ -42,7 +44,9 @@ export class MarseilleLife {
   if(s.id==='supporters')this.buildSupporters(s);
   if(s.id==='panier')this.buildPanier(s);
   if(s.id==='sardine')this.buildSardine(s);
-  if(s.id!=='ferry'&&s.id!=='panier'&&s.id!=='sardine'){
+  if(s.id==='divers')buildDivers(this,s);
+  if(s.id==='prado'||s.id==='prado-sud')buildBeach(this,s);
+  if(s.id!=='ferry'&&s.id!=='panier'&&s.id!=='sardine'&&s.id!=='divers'){
    for(const child of s.root.children){const x=anchor.x+child.position.x,z=anchor.z+child.position.z;if(this.world.surface(x,z)-this.world.ground(x,z)>3)child.visible=false;}
    s.crowd=s.crowd.filter(p=>this.world.surface(anchor.x+p.x,anchor.z+p.z)-this.world.ground(anchor.x+p.x,anchor.z+p.z)<3);
   }
@@ -107,11 +111,11 @@ export class MarseilleLife {
  updateCrowd(s,t,reacting){
   if(!s.bodies)return;
   for(let i=0;i<s.crowd.length;i++){
-   const p=s.crowd[i],march=s.id==='supporters'?((p.z+t*1.4+32)%64)-32-p.z:0,bob=s.id==='supporters'?Math.abs(Math.sin(t*3+p.index))*.2:0;
-   const x=p.x,z=p.z+march,base=s.id==='ferry'?2:0;
-   this.dummy.position.set(x,base+1.2+bob,z);this.dummy.rotation.set(0,0,0);this.dummy.scale.set(1,1,1);this.dummy.updateMatrix();s.bodies.setMatrixAt(i,this.dummy.matrix);
-   this.dummy.position.y=base+2.4+bob;this.dummy.updateMatrix();s.heads.setMatrixAt(i,this.dummy.matrix);
-   this.dummy.position.set(x+.55,base+1.8+bob+(reacting ? .4 : 0),z);this.dummy.rotation.z=reacting?-.5+Math.sin(t*9+i)*.5:1.1;this.dummy.scale.set(.13,1,.13);this.dummy.updateMatrix();s.arms.setMatrixAt(i,this.dummy.matrix);
+   const p=s.crowd[i],march=s.id==='supporters'?((p.z+t*1.4+32)%64)-32-p.z:0;let bob=s.id==='supporters'?Math.abs(Math.sin(t*3+p.index))*.2:0;
+   const size=p.size??1,x=p.x,z=p.z+march,base=(s.id==='ferry'?2:0)-(p.seated?.6:0)+(s.grills?this.world.ground(s.anchor.x+x,s.anchor.z+z)-s.root.position.y:0);if(p.size&&size<1&&s.grills&&!this.reducedMotion){bob+=Math.abs(Math.sin(t*2+p.index))*.08;}
+   this.dummy.position.set(x,base+1.2*size+bob,z);this.dummy.rotation.set(0,0,0);this.dummy.scale.set(size,size,size);this.dummy.updateMatrix();s.bodies.setMatrixAt(i,this.dummy.matrix);
+   this.dummy.position.y=base+2.4*size+bob;this.dummy.updateMatrix();s.heads.setMatrixAt(i,this.dummy.matrix);
+   const arms=s.id==='divers'?2:1;for(let side=0;side<arms;side++){const sign=side?-1:1;this.dummy.position.set(x+sign*.55*size,base+1.8*size+bob+(reacting?.4:0),z);this.dummy.rotation.z=sign*(reacting?-.5+(this.reducedMotion?0:Math.sin(t*9+i)*.5):1.1);this.dummy.scale.set(.13*size,size,.13*size);this.dummy.updateMatrix();s.arms.setMatrixAt(i*arms+side,this.dummy.matrix);}
   }
   for(const mesh of [s.bodies,s.heads,s.arms])mesh.instanceMatrix.needsUpdate=true;
  }
@@ -128,8 +132,8 @@ export class MarseilleLife {
    if(!s.built)continue;s.root.visible=active&&distance<1800;
    if(s.gulls)for(const {bird}of s.gulls)bird.root.visible=s.root.visible&&distance<550;
    if(!s.root.visible)continue;
-   const reacting=this.current===s.id&&t<this.cryUntil;
-   if(s.id!=='ferry'&&s.id!=='sardine')s.root.position.y=s.id==='panier'?this.world.surface(s.anchor.x,s.anchor.z)+1:this.world.ground(s.anchor.x,s.anchor.z);
+   let reacting=this.current===s.id&&t<this.cryUntil;
+   if(s.id!=='ferry'&&s.id!=='sardine')s.root.position.y=s.id==='panier'?this.world.surface(s.anchor.x,s.anchor.z)+1:s.id==='divers'?Math.max(s.roadHeight,this.world.ground(s.anchor.x,s.anchor.z)):this.world.ground(s.anchor.x,s.anchor.z);
    const height=s.root.position.y;
    landmarks.push({...s,x:s.anchor.x,z:s.anchor.z,center:[s.anchor.x,s.anchor.z],height:height+6,ground:this.world.ground(s.anchor.x,s.anchor.z)});
    if(s.id==='ferry'){
@@ -142,10 +146,12 @@ export class MarseilleLife {
    for(let i=0;i<s.animated.length;i++)s.animated[i].rotation.y=Math.sin(t*(1+wind*.08)+i)*Math.min(.65,.12+wind*.035);
    if(s.gulls&&distance<550)for(const {bird,phase}of s.gulls){const angle=t*.4+phase,follow=reacting?position:null,x=follow?follow.x+Math.sin(angle)*9:s.anchor.x+Math.sin(angle)*19,z=follow?follow.z+Math.cos(angle)*9:s.anchor.z+Math.cos(angle)*19,altitude=follow?follow.altitude+3:height+10+Math.sin(t+phase)*2;const followRate=1-Math.exp(-2*(paused?0:Math.min(dt,.1))),px=bird.root.position.x,pz=bird.root.position.z,py=bird.root.position.y,initialized=bird.root.userData.placed;bird.animate({x:initialized?px+(x-px)*followRate:x,z:initialized?pz+(z-pz)*followRate:z,altitude:initialized?py+(altitude-py)*followRate:altitude,heading:angle+Math.PI/2,pitch:0,roll:reacting ? .2 : 0,flap:.7,time:t+phase});bird.root.userData.placed=true;}
    if(s.fish){s.fish.position.y=Math.sin(t*.8)*.6;s.fish.rotation.z=Math.sin(t*.5)*.07;}
+   if(s.divers)reacting=updateDivers(this,s,t,distance<220&&!paused)||reacting;
+   if(s.grills)updateBeach(this,s,t,wind);
    this.updateCrowd(s,t,reacting);
   }
   this.world.lifeLandmarks=landmarks;
-  if(sardine&&!this.lastSardine&&Math.hypot(position.x-this.scenes[6].x,position.z-this.scenes[6].z)<1500)this.notice('Oh fan ! Une sardine géante bouche le Vieux-Port.');
+  if(sardine&&!this.lastSardine&&Math.hypot(position.x-this.scenes.find(s=>s.id==='sardine').x,position.z-this.scenes.find(s=>s.id==='sardine').z)<1500)this.notice('Oh fan ! Une sardine géante bouche le Vieux-Port.');
   this.lastSardine=sardine;
  }
  react(position){
