@@ -6,6 +6,19 @@ export function cacheMessage(win,type){
   controller.postMessage({type},[channel.port2]);
  });
 }
+// Give the first visit a chance to cache the very first geographic requests.
+// Cache failures or a slow installation must never prevent the game starting.
+export function waitForCache(win, timeout=4000){
+ const worker=win.navigator.serviceWorker;
+ if(!win.isSecureContext||!worker||worker.controller)return Promise.resolve();
+ return new Promise(resolve=>{
+  const ready=()=>{if(worker.controller)finish();};
+  const finish=()=>{win.clearTimeout(timer);worker.removeEventListener?.('controllerchange',ready);resolve();};
+  const timer=win.setTimeout(finish,timeout);
+  worker.addEventListener('controllerchange',ready);
+  worker.ready?.then(ready).catch(()=>{});
+ });
+}
 export function setupPwa(win,doc){
  const buttons=[...doc.querySelectorAll('[data-install]')],help=[...doc.querySelectorAll('[data-install-help]')];
  const standalone=win.matchMedia('(display-mode: standalone)');let prompt=null,installed=false;
@@ -27,33 +40,42 @@ export function setupPwa(win,doc){
  };
  sync();
  if(win.isSecureContext&&'serviceWorker' in win.navigator){
-  const status=doc.getElementById?.('cache-status'),persist=doc.getElementById?.('persist-cache'),clear=doc.getElementById?.('clear-map-cache'),update=doc.getElementById?.('pwa-update');
+  const statuses=[...doc.querySelectorAll('[data-cache-status]')],clearButtons=[...doc.querySelectorAll('[data-clear-map-cache]')],updates=[...doc.querySelectorAll('[data-pwa-update]')];
+  let durable=false,persisting;
+  const report=text=>statuses.forEach(status=>status.textContent=text);
   const describe=async()=>{
-   if(!status)return;
-   try{const stats=await cacheMessage(win,'CACHE_STATS');if(stats&&!stats.error)status.textContent=`${Math.round(stats.bytes/1048576)} Mo en cache · ${stats.count} zones/fichiers · limite ${Math.round(stats.limit/1048576)} Mo.`;}catch{}
+   try{const stats=await cacheMessage(win,'CACHE_STATS');if(stats&&!stats.error)report(`Cache actif${durable?' · conservation durable':''} · ${Math.round(stats.bytes/1048576)} Mo · ${stats.count} zones/fichiers · limite ${Math.round(stats.limit/1048576)} Mo.`);}catch{}
   };
+  const requestPersistence=()=>{
+   if(durable||!win.navigator.storage?.persist)return Promise.resolve();
+   if(!persisting)persisting=(async()=>{
+    try{durable=await win.navigator.storage.persisted?.()||await win.navigator.storage.persist();}
+    catch{/* Ordinary caching remains active if persistence is unsupported or refused. */}
+    report(durable?'Cache actif · conservation durable autorisée.':'Cache actif automatiquement. Sa conservation dépend du navigateur et de l’espace disponible.');
+    await describe();
+   })().finally(()=>{persisting=null;});
+   return persisting;
+  };
+  // Some browsers grant persistence only after a trusted interaction.
+  const retryPersistence=()=>{win.removeEventListener?.('pointerdown',retryPersistence);win.removeEventListener?.('keydown',retryPersistence);requestPersistence();};
+  if(win.navigator.storage?.persist){win.addEventListener('pointerdown',retryPersistence,{once:true});win.addEventListener('keydown',retryPersistence,{once:true});}
   doc.addEventListener?.('click',event=>{const toggle=event.target.closest?.('#panel-toggle');if(toggle?.getAttribute('aria-expanded')==='true')describe();});
-  if(persist){persist.disabled=!win.navigator.storage?.persist;persist.onclick=async()=>{
-   persist.disabled=true;
-   try{const durable=await win.navigator.storage.persist();if(status)status.textContent=durable?'Conservation durable autorisée. Les zones parcourues restent sur cet appareil.':'Cache actif. Sa conservation dépend du navigateur et de l’espace disponible.';}
-   catch{if(status)status.textContent='Cache actif ; conservation durable indisponible dans ce navigateur.';}
-   finally{persist.disabled=false;}
-  };}
-  if(clear)clear.onclick=async()=>{
-   clear.disabled=true;
-   try{const result=await cacheMessage(win,'CLEAR_MAP_CACHE');if(status)status.textContent=result&&!result.error?'Cache de la carte vidé. Tes souvenirs sont conservés.':'Cache indisponible pour le moment.';}
-   catch{if(status)status.textContent='Cache indisponible pour le moment.';}
-   finally{clear.disabled=false;}
+  for(const clear of clearButtons)clear.onclick=async()=>{
+   clearButtons.forEach(button=>button.disabled=true);
+   try{const result=await cacheMessage(win,'CLEAR_MAP_CACHE');report(result&&!result.error?'Cache de la carte vidé. Le cache reste actif et tes souvenirs sont conservés.':'Cache indisponible pour le moment.');}
+   catch{report('Cache indisponible pour le moment.');}
+   finally{clearButtons.forEach(button=>button.disabled=false);}
   };
   let registration,reloading=false;
-  const offerUpdate=()=>{if(update)update.hidden=!registration?.waiting;};
-  if(update)update.onclick=()=>{if(registration?.waiting){reloading=true;registration.waiting.postMessage({type:'ACTIVATE_UPDATE'});}};
+  const offerUpdate=()=>updates.forEach(update=>update.hidden=!registration?.waiting);
+  for(const update of updates)update.onclick=()=>{if(registration?.waiting){reloading=true;registration.waiting.postMessage({type:'ACTIVATE_UPDATE'});}};
   win.navigator.serviceWorker.addEventListener?.('controllerchange',()=>{if(reloading)win.location.reload();else describe();});
   const register=()=>win.navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}).then(value=>{
-   registration=value;offerUpdate();describe();
+   registration=value;offerUpdate();describe();requestPersistence();
    registration.addEventListener?.('updatefound',()=>registration.installing?.addEventListener('statechange',offerUpdate));
   }).catch(()=>{});
-  if(doc.readyState==='complete')register();else win.addEventListener('load',register,{once:true});
+  register();
  }
 }
+export const cacheReady=typeof window!=='undefined'?waitForCache(window):Promise.resolve();
 if(typeof window!=='undefined')setupPwa(window,document);
