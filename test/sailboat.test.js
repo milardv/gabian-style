@@ -57,3 +57,10 @@ test('Voilier : tête de foc ancrée au mât et équipier progressif lors du cha
  s.time+=1/60;s.windAngle=-s.windAngle;s.boom=-s.boom;boat.animate(s,1/60,8);boat.root.updateMatrixWorld(true);const after=new T.Vector3().fromBufferAttribute(jib.geometry.attributes.position,156);jib.localToWorld(after);
  assert.ok(head.distanceTo(after)<1e-8);assert.ok(Math.abs(crew.position.x-before)<.08);
 });
+
+test('Voilier : les vagues laissent les images aériennes visibles et gardent les tests de profondeur',()=>{
+ const scene=new T.Scene();createSailboatModel(scene);
+ const water=scene.children.find(o=>o.geometry?.attributes.color?.itemSize===4);
+ assert.ok(water.material.transparent);assert.ok(water.material.opacity<=.08);
+ assert.equal(water.material.depthTest,true);assert.equal(water.material.depthWrite,false);
+});

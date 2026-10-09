@@ -32,7 +32,7 @@ export function createSailboatModel(scene,{reducedMotion=false}={}){
  const crew=new T.Group();crew.position.set(-.66,.73,1.45);root.add(crew);part(new T.SphereGeometry(.17,12,8),new T.MeshStandardMaterial({color:0xd6a179}),0,.63,0,1,1.1,1,crew);part(box,blue,0,.25,0,.3,.42,.2,crew);part(box,wood,.17,0,-.22,.45,.14,.18,crew);part(new T.CylinderGeometry(.2,.2,.05,12),white,0,.8,0,1,1,1,crew);
  const waterGeometry=new T.PlaneGeometry(100,100,32,32);waterGeometry.rotateX(-Math.PI/2);
  const waterColors=[];for(let i=0;i<waterGeometry.attributes.position.count;i++){const p=waterGeometry.attributes.position,r=Math.hypot(p.getX(i),p.getZ(i));waterColors.push(1,1,1,Math.max(0,Math.min(1,(48-r)/20)));}waterGeometry.setAttribute('color',new T.Float32BufferAttribute(waterColors,4));
- const water=new T.Mesh(waterGeometry,new T.MeshPhongMaterial({color:0x28667b,shininess:65,specular:0x698f9b,vertexColors:true,transparent:true,opacity:.8,depthWrite:false}));scene.add(water);water.renderOrder=1;
+ const water=new T.Mesh(waterGeometry,new T.MeshPhongMaterial({color:0x28667b,shininess:24,specular:0x698f9b,vertexColors:true,transparent:true,opacity:.06,depthWrite:false}));scene.add(water);water.renderOrder=1;
  const wakeGeometry=new T.BufferGeometry(),wakePositions=new Float32Array(120*12);wakeGeometry.setAttribute('position',new T.BufferAttribute(wakePositions,3));
  const wake=new T.LineSegments(wakeGeometry,new T.LineBasicMaterial({color:0xe4f1ec,transparent:true,opacity:.38,depthWrite:false}));scene.add(wake);let trail=[],lastTime=null,maskTime=-Infinity,lastRenderTime=null;
  function clothShape(sail,s){const p=sail.geometry.attributes.position;
