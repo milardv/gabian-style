@@ -8,15 +8,35 @@ const attributes={position:B.VertexBuffer.PositionKind,normal:B.VertexBuffer.Nor
 const gamma=value=>value<=.0031308?value*12.92:1.055*Math.pow(value,1/2.4)-.055;
 const color=(target,source,factor=1)=>target.set(gamma(source.r)*factor,gamma(source.g)*factor,gamma(source.b)*factor);
 const changed=(a,b)=>!a||a.some((value,i)=>value!==b[i]);
+// Samples a grid finer than native quadrants inside the mesh's horizontal extent.
+function coveredByTiles(mesh,bounds){
+ if(!bounds?.length)return false;
+ const box=mesh.getBoundingInfo().boundingBox,x0=box.minimum.x,z0=box.minimum.z,w=box.maximum.x-x0,d=box.maximum.z-z0;
+ for(let i=0;i<8;i++)for(let j=0;j<8;j++){const x=x0+w*(i+.5)/8,z=z0+d*(j+.5)/8;let inside=false;for(const b of bounds)if(x>=b[0]&&x<=b[2]&&z>=b[1]&&z<=b[3]){inside=true;break;}if(!inside)return false;}
+ return true;
+}
 
 class TerrainMask extends B.MaterialPluginBase {
- constructor(material,mask,coast){super(material,'GabianTerrainMask',200,{},true,true);this.mask=mask;this.coast=coast;this.bounds=new Float32Array(128*4);}
- getUniforms(){return{ubo:[{name:'terrainCount',size:1,type:'float'},{name:'terrainBounds',size:4,type:'vec4',arraySize:128}],fragment:'uniform float terrainCount;\nuniform vec4 terrainBounds[128];'};}
- bindForSubMesh(buffer){const original=this.mask?.terrainCount.value||0,extra=this.coast?.bounds||[],count=Math.min(128,original+extra.length);for(let i=0;i<original;i++)this.mask.terrainBounds.value[i].toArray(this.bounds,i*4);for(let i=original;i<count;i++)this.bounds.set(extra[i-original],i*4);buffer.updateFloat('terrainCount',count);buffer.updateFloatArray('terrainBounds',this.bounds);}
- getCustomCode(kind){return kind==='vertex'?{CUSTOM_VERTEX_DEFINITIONS:'varying vec2 overviewPosition;',CUSTOM_VERTEX_MAIN_END:'overviewPosition = position.xz;'}:{CUSTOM_FRAGMENT_DEFINITIONS:'varying vec2 overviewPosition;',CUSTOM_FRAGMENT_MAIN_BEGIN:`for (int i=0; i<128; i++) {
+ constructor(material,mask,coast){super(material,'GabianTerrainMask',200,{},true,true);this.mask=mask;this.coast=coast;this.bounds=new Float32Array(128*4);this.union=new Float32Array(4);this.box=new Float32Array(4);}
+ getUniforms(){return{ubo:[{name:'terrainCount',size:1,type:'float'},{name:'terrainUnion',size:4,type:'vec4'},{name:'terrainBounds',size:4,type:'vec4',arraySize:128}],fragment:'uniform float terrainCount;\nuniform vec4 terrainUnion;\nuniform vec4 terrainBounds[128];'};}
+ // Upload only the rectangles overlapping this mesh: a fallback tile then tests a
+ // handful of native tiles per fragment instead of every loaded one.
+ bindForSubMesh(buffer,scene,engine,subMesh){
+  const box=subMesh?.getMesh?.().getBoundingInfo?.().boundingBox,limit=this.box;
+  if(box){limit[0]=box.minimum.x;limit[1]=box.minimum.z;limit[2]=box.maximum.x;limit[3]=box.maximum.z;}
+  const union=this.union;union[0]=union[1]=Infinity;union[2]=union[3]=-Infinity;let count=0;
+  const add=(x0,z0,x1,z1)=>{if(count>=128||(box&&(x1<limit[0]||x0>limit[2]||z1<limit[1]||z0>limit[3])))return;const o=count*4;this.bounds[o]=x0;this.bounds[o+1]=z0;this.bounds[o+2]=x1;this.bounds[o+3]=z1;union[0]=Math.min(union[0],x0);union[1]=Math.min(union[1],z0);union[2]=Math.max(union[2],x1);union[3]=Math.max(union[3],z1);count++;};
+  const original=this.mask?.terrainCount.value||0;for(let i=0;i<original;i++){const b=this.mask.terrainBounds.value[i];add(b.x,b.y,b.z,b.w);}
+  for(const b of this.coast?.bounds||[])add(b[0],b[1],b[2],b[3]);
+  if(!count)union.fill(0);
+  buffer.updateFloat('terrainCount',count);buffer.updateFloat4?.('terrainUnion',union[0],union[1],union[2],union[3]);buffer.updateFloatArray('terrainBounds',this.bounds);
+ }
+ getCustomCode(kind){return kind==='vertex'?{CUSTOM_VERTEX_DEFINITIONS:'varying vec2 overviewPosition;',CUSTOM_VERTEX_MAIN_END:'overviewPosition = position.xz;'}:{CUSTOM_FRAGMENT_DEFINITIONS:'varying vec2 overviewPosition;',CUSTOM_FRAGMENT_MAIN_BEGIN:`if (terrainCount>0. && overviewPosition.x>=terrainUnion.x && overviewPosition.x<=terrainUnion.z && overviewPosition.y>=terrainUnion.y && overviewPosition.y<=terrainUnion.w) {
+ for (int i=0; i<128; i++) {
  if (float(i)>=terrainCount) break;
  vec4 b=terrainBounds[i];
  if (overviewPosition.x>=b.x && overviewPosition.x<=b.z && overviewPosition.y>=b.y && overviewPosition.y<=b.w) discard;
+ }
  }`};}
 }
 
@@ -24,6 +44,8 @@ export class BabylonRenderer {
  constructor({canvas,antialias=true,engine}={}){
   this.engine=engine||new B.Engine(canvas,antialias,{powerPreference:'high-performance',preserveDrawingBuffer:false,stencil:true},false);
   this.scene=new B.Scene(this.engine);this.scene.useRightHandedSystem=true;
+  // Nothing in the scene is pickable: skip the per-pointer-move mesh scan.
+  this.scene.skipPointerMovePicking=true;
   // Draw the fallback sea first, then clear only depth for the photographic
   // terrain/world. They cannot compete for the same depth, even at the horizon.
   this.scene.setRenderingAutoClearDepthStencil(1,true,true,true);
@@ -42,8 +64,21 @@ export class BabylonRenderer {
   this.coast=canvas?new CoastTiles(this.scene):null;
   if(canvas)canvas.dataset.engine='babylonjs';
  }
- setPixelRatio(value){this.pixelRatio=value;this.engine.setHardwareScalingLevel(1/value);}
- setSize(width,height){this.engine.setSize(Math.round(width*this.pixelRatio),Math.round(height*this.pixelRatio));}
+ setPixelRatio(value){this.basePixelRatio=value;this.applyPixelRatio(value);this.adaptive={start:0,frames:0,time:0,good:0};}
+ applyPixelRatio(value){this.pixelRatio=value;this.engine.setHardwareScalingLevel(1/value);if(this.size)this.engine.setSize(Math.round(this.size[0]*value),Math.round(this.size[1]*value));const canvas=this.engine.getRenderingCanvas?.();if(canvas)canvas.dataset.pixelRatio=value.toFixed(2);}
+ setSize(width,height){this.size=[width,height];this.engine.setSize(Math.round(width*this.pixelRatio),Math.round(height*this.pixelRatio));}
+ // Lower the internal resolution while the frame rate stays low, and restore
+ // it gradually once the GPU has headroom. Hitches (loading, tab switches) are ignored.
+ adaptResolution(now){
+  const a=this.adaptive;if(!a||!this.size)return;
+  const dt=now-(this.lastFrame??now);this.lastFrame=now;
+  if(!(dt>0)||dt>250){a.start=now;a.frames=a.time=0;return;}
+  a.frames++;a.time+=dt;if(now-a.start<2000)return;
+  const fps=1000*a.frames/a.time,base=this.basePixelRatio,min=base*.7;a.start=now;a.frames=a.time=0;
+  if(fps<42&&this.pixelRatio>min+.01){a.good=0;this.applyPixelRatio(Math.max(min,this.pixelRatio*.85));}
+  else if(fps>56&&this.pixelRatio<base-.01){if(++a.good>=2){a.good=0;this.applyPixelRatio(Math.min(base,this.pixelRatio/.85));}}
+  else a.good=0;
+ }
  setAnimationLoop(callback){if(this.loop)this.engine.stopRenderLoop(this.loop);this.loop=callback?()=>callback(performance.now()):null;if(this.loop)this.engine.runRenderLoop(this.loop);}
 
  texture(source){
@@ -76,8 +111,11 @@ export class BabylonRenderer {
   if(record.seen===this.frame)return record.native;
   record.seen=this.frame;const native=record.native;
   color(native.diffuseColor,source.color);
-  native.disableLighting=!!(source.isMeshBasicMaterial||source.isSpriteMaterial||source.isLineBasicMaterial);
-  if(native.disableLighting)color(native.emissiveColor,source.color);
+  // Assign disableLighting once per frame: toggling it marks every submesh's
+  // lights dirty and forces Babylon to rebuild shader defines each frame.
+  const diffuse=this.texture(source.map),photo=!!(source.userData?.photographic&&diffuse),basic=!!(source.isMeshBasicMaterial||source.isSpriteMaterial||source.isLineBasicMaterial);
+  native.disableLighting=basic||photo;
+  if(basic)color(native.emissiveColor,source.color);
   else if(source.emissive)color(native.emissiveColor,source.emissive,source.emissiveIntensity??1);
   else native.emissiveColor.setAll(0);
   if(source.specular)color(native.specularColor,source.specular);
@@ -88,12 +126,11 @@ export class BabylonRenderer {
   native.zOffset=source.polygonOffset?source.polygonOffsetFactor:0;
   native.alphaMode=source.blending===2?B.Constants.ALPHA_ADD:B.Constants.ALPHA_COMBINE;
   native.transparencyMode=source.transparent?B.Material.MATERIAL_ALPHABLEND:B.Material.MATERIAL_OPAQUE;
-  native.diffuseTexture=this.texture(source.map);native.useAlphaFromDiffuseTexture=!!source.transparent;
+  native.diffuseTexture=diffuse;native.useAlphaFromDiffuseTexture=!!source.transparent;
   // Aerial photos already contain sunlight and shadows. Re-lighting them makes
   // cliffs and sea artificially dark and reveals seams between tile renderers.
-  const photo=source.userData?.photographic&&native.diffuseTexture;
-  native.emissiveTexture=photo||null;
-  if(photo){native.disableLighting=true;native.emissiveColor.setAll(1);native.diffuseColor.setAll(0);}
+  native.emissiveTexture=photo?diffuse:null;
+  if(photo){native.emissiveColor.setAll(1);native.diffuseColor.setAll(0);}
   if(native.diffuseTexture)native.diffuseTexture.hasAlpha=!!source.transparent;
   native.fillMode=source.isLineBasicMaterial?B.Material.LineListDrawMode:B.Material.TriangleFillMode;
   return native;
@@ -154,7 +191,9 @@ export class BabylonRenderer {
   if(range){const total=geometry.getTotalIndices(),start=Math.min(total,range.start),count=Math.max(0,Math.min(total-start,range.count));
    if(record.rangeStart!==start||record.rangeCount!==count||record.rangeGeometry!==geometry){mesh.releaseSubMeshes();new B.SubMesh(0,0,geometry.getTotalVertices(),start,count,mesh);record.rangeStart=start;record.rangeCount=count;record.rangeGeometry=geometry;}
   }
-  mesh.setEnabled(!source.isInstancedMesh||source.count>0);
+  // A fallback terrain tile entirely under ready native tiles would discard all
+  // its fragments anyway: skip its vertices and per-fragment mask loop.
+  mesh.setEnabled((!source.isInstancedMesh||source.count>0)&&!(source.material.userData?.coastalTerrain&&coveredByTiles(mesh,this.coast?.bounds)));
  }
  light(source){
   let record=this.objects.get(source);
@@ -196,6 +235,6 @@ export class BabylonRenderer {
   const usedTexture=new Set();for(const source of usedMaterial)if(source.map)usedTexture.add(source.map);
   for(const [source,record]of this.textures)if(!usedTexture.has(source)){record.native.dispose();this.textures.delete(source);}
  }
- render(sourceScene,sourceCamera){this.sync(sourceScene,sourceCamera);this.coast?.update(this.quality);this.scene.render();}
+ render(sourceScene,sourceCamera){this.adaptResolution(performance.now());this.sync(sourceScene,sourceCamera);this.coast?.update(this.quality);this.scene.render();}
  dispose(){this.setAnimationLoop(null);this.coast?.dispose();this.scene.dispose();this.engine.dispose();this.objects.clear();this.geometries.clear();this.materials.clear();this.textures.clear();}
 }

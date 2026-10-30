@@ -5,7 +5,7 @@ import {COAST_URL} from './coast-config.js';
 // CPU height grid for vehicle physics; hide its mesh only under ready 3D tiles.
 export class CoastTiles {
  constructor(scene){
-  this.scene=scene;this.tiles=new B.TilesRenderer(COAST_URL,scene);this.failed=false;this.bounds=[];
+  this.scene=scene;this.tiles=new B.TilesRenderer(COAST_URL,scene);this.failed=false;this.bounds=[];this.ready=new WeakSet();this.frames=0;
   this.tiles.errorTarget=10;this.tiles.downloadQueue.maxJobs=2;this.tiles.parseQueue.maxJobs=1;
   this.tiles.lruCache.maxSize=160;this.tiles.lruCache.minSize=48;
   this.range=1800;
@@ -42,8 +42,12 @@ export class CoastTiles {
   this.tiles.lruCache.minSize=quality==='mobile'?32:48;
   this.tiles.update();
   this.bounds=[];
-  for(const tile of this.tiles.visibleTiles){const root=tile.engineData.scene,meshes=root?.getChildMeshes().filter(mesh=>mesh.getTotalVertices()>0)||[];
-   if(tile.extras?.bounds&&meshes.length&&meshes.every(mesh=>mesh.isReady(true)))this.bounds.push(tile.extras.bounds);
+  // Shader readiness is checked once per loaded model, then revalidated every
+  // second instead of walking every visible mesh at each frame.
+  if(++this.frames%60===0)this.ready=new WeakSet();
+  for(const tile of this.tiles.visibleTiles){const root=tile.engineData.scene;if(!tile.extras?.bounds||!root)continue;
+   if(!this.ready.has(root)){const meshes=root.getChildMeshes().filter(mesh=>mesh.getTotalVertices()>0);if(!meshes.length||!meshes.every(mesh=>mesh.isReady(true)))continue;this.ready.add(root);}
+   this.bounds.push(tile.extras.bounds);
   }
  }
  dispose(){this.tiles.dispose();this.bounds=[];}

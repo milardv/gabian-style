@@ -1,10 +1,10 @@
 import {pwaAssets,renderWorker} from './lib/pwa-assets.js';
 import { createServer } from 'node:http';
-import {acceptsGzip} from './lib/http-encoding.js';
+import {acceptsGzip,gzipStatic} from './lib/http-encoding.js';
 import {coastModel} from './lib/coast-store.js';
 import {COAST_DIR} from './public/flight/coast-config.js';
 import {gzipSync,gunzipSync} from 'node:zlib';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { marseilleBoundary, marseilleOverview, marseilleOverviewImagery, marseilleTerrain, marseilleBuildings, marseilleRoads, marseilleImagery, validCityTile } from './lib/marseille-data.js';
@@ -86,9 +86,9 @@ createServer(async (request, response) => {
     const target = ['/', '/marseille', '/marseille/'].includes(url.pathname) ? '/index.html' : url.pathname;
     const path = normalize(join(publicDir, target));
     if (!path.startsWith(publicDir + '/') || !existsSync(path)) return fail(response, 404, 'Page introuvable.');
-    const compressed=acceptsGzip(request.headers['accept-encoding'])&&existsSync(path+'.gz');
+    const gzip=acceptsGzip(request.headers['accept-encoding']),prebuilt=gzip&&existsSync(path+'.gz'),dynamic=gzip&&!prebuilt?gzipStatic(path,extname(path),readFileSync,statSync,raw=>gzipSync(raw,{level:9})):null,compressed=prebuilt||!!dynamic;
     response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff', 'X-Gabian-Version':pwa.version, 'Vary':'Accept-Encoding', ...(compressed?{'Content-Encoding':'gzip'}:{}), 'Cache-Control': ['.html','.js','.css','.webmanifest'].includes(extname(path)) ? 'no-cache' : 'public, max-age=86400' });
-    response.end(readFileSync(path+(compressed?'.gz':'')));
+    response.end(dynamic||readFileSync(path+(prebuilt?'.gz':'')));
   } catch (error) {
     console.error(error);
     if (response.headersSent) response.destroy(error);
